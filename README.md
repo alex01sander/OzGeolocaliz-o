@@ -18,6 +18,7 @@ Em um mundo conectado e globalizado, a geolocalização se torna cada vez mais e
 ## 🔍 **Funcionalidades Esperadas**
 
 ### Usuários
+
 - **CRUD** completo para usuários.
 - Cada usuário deve ter nome, email, endereço e coordenadas.
 - Na criação, o usuário pode fornecer endereço ou coordenadas. Haverá erro caso forneça ambos ou nenhum.
@@ -25,6 +26,7 @@ Em um mundo conectado e globalizado, a geolocalização se torna cada vez mais e
 - Atualização de endereço ou coordenadas deve seguir a mesma lógica.
 
 ### Regiões
+
 - **CRUD** completo para regiões.
 - Uma região é definida como um polígono em GeoJSON, um formato padrão para representar formas geográficas. Cada região tem um nome, um conjunto de coordenadas que formam o polígono, e um usuário que será o dono da região.
 - Listar regiões contendo um ponto específico.
@@ -45,6 +47,7 @@ Em um mundo conectado e globalizado, a geolocalização se torna cada vez mais e
   ```
 
 ### Testes
+
 - Unitários e de integração.
 
 ## 🌟 **Diferenciais**
