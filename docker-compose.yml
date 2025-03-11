@@ -18,7 +18,7 @@ services:
     ports:
       - "3000:3000"
     environment:
-      MONGO_URI: mongodb://mongodb:27017/ozmap
+      MONGO_URI: mongodb://root:example@mongodb:27017/ozmap?authSource=admin
 
 volumes:
   mongo_data:
