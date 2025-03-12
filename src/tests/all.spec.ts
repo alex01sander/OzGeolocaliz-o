@@ -1,15 +1,14 @@
 import "reflect-metadata";
-
 import * as mongoose from "mongoose";
 import * as supertest from "supertest";
 import * as sinon from "sinon";
 import { faker } from "@faker-js/faker";
 import { expect, assert } from "chai";
-
 import "../config/database";
-import { Region, RegionModel, UserModel } from "../models/models";
+import { Region, RegionModel } from "../models/region";
 import GeoLib from "../utils/lib";
 import server from "../server";
+import { UserModel } from "../models/user";
 
 describe("Models", () => {
   let user;
@@ -22,10 +21,7 @@ describe("Models", () => {
       .resolves(faker.location.streetAddress({ useFullAddress: true }));
     geoLibStub.getCoordinatesFromAddress = sinon
       .stub(GeoLib, "getCoordinatesFromAddress")
-      .resolves([
-        faker.location.latitude(), // lat
-        faker.location.longitude(), // lng
-      ]);
+      .resolves([faker.location.latitude(), faker.location.longitude()]);
 
     session = await mongoose.startSession();
     user = await UserModel.create({
@@ -50,7 +46,16 @@ describe("Models", () => {
 
   describe("UserModel", () => {
     it("should create a user", async () => {
-      expect(1).to.be.eq(1);
+      const userData = {
+        name: faker.person.firstName(),
+        email: faker.internet.email(),
+        address: faker.location.streetAddress(),
+      };
+
+      const newUser = await UserModel.create([userData]);
+
+      expect(newUser).to.have.property("name", userData.name);
+      expect(newUser).to.have.property("email", userData.email);
     });
   });
 
@@ -59,6 +64,11 @@ describe("Models", () => {
       const regionData: Omit<Region, "_id"> = {
         user: user._id,
         name: faker.person.fullName(),
+        coordinates: [],
+        location: {
+          type: "Polygon",
+          coordinates: [],
+        },
       };
 
       const [region] = await RegionModel.create([regionData]);
@@ -72,7 +82,6 @@ describe("Models", () => {
         .lean();
       try {
         await RegionModel.create([{ user: user._id }]);
-
         assert.fail("Should have thrown an error");
       } catch (error) {
         const updatedUserRecord = await UserModel.findOne({ _id: user._id })
