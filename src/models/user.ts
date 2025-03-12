@@ -21,6 +21,14 @@ class Base extends TimeStamps {
 @pre<User>("save", async function (next) {
   const user = this as Omit<any, keyof User> & User;
 
+  if (
+    (user.address && user.coordinates) ||
+    (!user.address && !user.coordinates)
+  ) {
+    next(new Error("Você deve fornecer o endereço ou as coordenadas."));
+    return;
+  }
+
   if (user.isModified("coordinates")) {
     user.address = await lib.getAddressFromCoordinates(user.coordinates);
   } else if (user.isModified("address")) {
