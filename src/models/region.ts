@@ -39,11 +39,59 @@ export class Region extends Base {
   @Prop({ required: true })
   name!: string;
 
-  @Prop({ required: true, type: () => [Number] })
-  coordinates!: [number, number][];
+  @Prop({
+    required: true,
+    type: () => [[Number]],
+  })
+  coordinates!: [number, number][][];
 
   @Prop({ ref: () => UserModel, required: true, type: () => String })
   user: Ref<typeof UserModel>;
+
+  @Prop({ required: true })
+  location: { type: "Polygon"; coordinates: [number, number][][] };
 }
 
 export const RegionModel = getModelForClass(Region);
+
+RegionModel.createIndexes().then(() => {
+  console.log("Indexes created for RegionModel");
+});
+
+export async function findRegionsByPoint(
+  lat: number,
+  lng: number,
+  userId: string,
+) {
+  return RegionModel.find({
+    location: {
+      $geoIntersects: {
+        $geometry: {
+          type: "Point",
+          coordinates: [lng, lat],
+        },
+      },
+    },
+    user: userId,
+  });
+}
+
+export async function findRegionsWithinDistance(
+  lat: number,
+  lng: number,
+  distance: number,
+  userId: string,
+) {
+  return RegionModel.find({
+    location: {
+      $near: {
+        $geometry: {
+          type: "Point",
+          coordinates: [lng, lat],
+        },
+        $maxDistance: distance,
+      },
+    },
+    user: userId,
+  });
+}
