@@ -22,10 +22,10 @@ describe("Models", () => {
       .resolves(faker.location.streetAddress({ useFullAddress: true }));
     geoLibStub.getCoordinatesFromAddress = sinon
       .stub(GeoLib, "getCoordinatesFromAddress")
-      .resolves({
-        lat: faker.location.latitude(),
-        lng: faker.location.longitude(),
-      });
+      .resolves([
+        faker.location.latitude(), // lat
+        faker.location.longitude(), // lng
+      ]);
 
     session = await mongoose.startSession();
     user = await UserModel.create({
