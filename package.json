@@ -4,7 +4,7 @@
   "description": "DevOZ - Tech test",
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon index.ts",
+    "dev": "ts-node src/index.ts",
     "test": "mocha --require ts-node/register ./src/**/*.spec.ts --exit"
   },
   "author": "",
@@ -35,7 +35,7 @@
     "prettier": "^3.5.3",
     "sinon": "^16.0.0",
     "supertest": "^6.3.3",
-    "ts-node": "^10.9.1",
-    "typescript": "^5.2.2"
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.2"
   }
 }
