@@ -13,7 +13,7 @@ export const createUser = async (req: Request, res: Response) => {
 
   let resolvedCoordinates = coordinates;
   if (address && !coordinates) {
-    const { lat, lng } = await lib.getCoordinatesFromAddress(address);
+    const [lat, lng] = await lib.getCoordinatesFromAddress(address);
     resolvedCoordinates = [lng, lat];
   }
 
