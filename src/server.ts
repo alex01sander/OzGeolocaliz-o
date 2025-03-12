@@ -48,17 +48,23 @@ router.put("/users/:id", async (req, res) => {
   const { id } = req.params;
   const { update } = req.body;
 
-  const user = await UserModel.findOne({ _id: id }).lean();
+  try {
+    const user = await UserModel.findOne({ _id: id });
 
-  if (!user) {
-    res.status(STATUS.DEFAULT_ERROR).json({ message: "Region not found" });
+    if (!user) {
+      return res.status(STATUS.NOT_FOUND).json({ message: "User not found" });
+    }
+
+    user.name = update.name;
+
+    await user.save();
+
+    return res
+      .status(STATUS.UPDATED)
+      .json({ message: "User updated successfully" });
+  } catch (error) {
+    res.status(STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
   }
-
-  user.name = update.name;
-
-  await user.save();
-
-  return res.sendStatus(201);
 });
 
 server.use(router);
