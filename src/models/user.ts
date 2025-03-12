@@ -32,7 +32,7 @@ class Base extends TimeStamps {
   if (user.isModified("coordinates")) {
     user.address = await lib.getAddressFromCoordinates(user.coordinates);
   } else if (user.isModified("address")) {
-    const { lat, lng } = await lib.getCoordinatesFromAddress(user.address);
+    const [lat, lng] = await lib.getCoordinatesFromAddress(user.address);
     user.coordinates = [lng, lat];
   }
 
