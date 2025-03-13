@@ -5,10 +5,16 @@ import lib from "../utils/lib";
 export const createUser = async (req: Request, res: Response) => {
   try {
     const { name, email, address, coordinates } = req.body;
-
     console.log(
       `Iniciando criação de usuário - Nome: ${name}, Email: ${email}`,
     );
+
+    if (address && coordinates) {
+      console.warn("Tentativa de criação de usuário inválida");
+      return res.status(400).json({
+        message: "Você deve fornecer endereço ou coordenadas, mas não ambos.",
+      });
+    }
 
     if (!address && !coordinates) {
       console.warn(
@@ -19,46 +25,21 @@ export const createUser = async (req: Request, res: Response) => {
         .json({ message: "Forneça endereço ou coordenadas." });
     }
 
-    let resolvedCoordinates = coordinates;
-    let resolvedAddress = address;
+    const userData: any = { name, email };
 
-    if (address && !coordinates) {
-      try {
-        const [lat, lng] = await lib.getCoordinatesFromAddress(address);
-        resolvedCoordinates = [lng, lat];
-        console.log(
-          `Coordenadas resolvidas - Endereço: ${address}, Coordenadas: ${resolvedCoordinates}`,
-        );
-      } catch (geoError) {
-        console.error("Erro ao resolver coordenadas:", geoError);
-        return res.status(500).json({
-          message: "Erro ao resolver coordenadas",
-        });
-      }
+    if (address) {
+      userData.address = address;
+      const coords = await lib.getCoordinatesFromAddress(address);
+      userData.coordinates = [coords[1], coords[0]];
     }
 
-    if (coordinates && !address) {
-      try {
-        resolvedAddress = await lib.getAddressFromCoordinates(coordinates);
-        console.log(
-          `Endereço resolvido - Coordenadas: ${coordinates}, Endereço: ${resolvedAddress}`,
-        );
-      } catch (geoError) {
-        console.error("Erro ao resolver endereço:", geoError);
-        return res.status(500).json({
-          message: "Erro ao resolver endereço",
-        });
-      }
+    if (coordinates) {
+      userData.coordinates = [coordinates[1], coordinates[0]];
+      userData.address = await lib.getAddressFromCoordinates(coordinates);
     }
-
-    const user = new UserModel({
-      name,
-      email,
-      address: resolvedAddress,
-      coordinates: resolvedCoordinates,
-    });
 
     try {
+      const user = new UserModel(userData);
       await user.save();
       console.log(
         `Usuário criado com sucesso - ID: ${user._id}, Email: ${user.email}`,
@@ -68,6 +49,7 @@ export const createUser = async (req: Request, res: Response) => {
       console.error("Erro ao salvar usuário:", saveError);
       return res.status(500).json({
         message: "Erro ao salvar usuário",
+        error: saveError.message,
       });
     }
   } catch (error) {
