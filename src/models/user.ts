@@ -1,59 +1,107 @@
 import "reflect-metadata";
 import * as mongoose from "mongoose";
-import { TimeStamps } from "@typegoose/typegoose/lib/defaultClasses";
 import {
   pre,
   getModelForClass,
   Prop,
-  Ref,
   modelOptions,
 } from "@typegoose/typegoose";
 import lib from "../utils/lib";
 
-import ObjectId = mongoose.Types.ObjectId;
-import { Region } from "./region";
-
-class Base extends TimeStamps {
-  @Prop({ required: true, default: () => new ObjectId().toString() })
-  _id: string;
-}
-
 @pre<User>("save", async function (next) {
-  const user = this as Omit<any, keyof User> & User;
-
-  if (
-    (user.address && user.coordinates) ||
-    (!user.address && !user.coordinates)
-  ) {
-    next(new Error("Você deve fornecer o endereço ou as coordenadas."));
-    return;
+  // Validação estrita: deve ter OU endereço OU coordenadas, mas não ambos
+  if (this.address && this.coordinates) {
+    return next(
+      new Error("Você deve fornecer endereço ou coordenadas, mas não ambos."),
+    );
   }
 
-  if (user.isModified("coordinates")) {
-    user.address = await lib.getAddressFromCoordinates(user.coordinates);
-  } else if (user.isModified("address")) {
-    const [lat, lng] = await lib.getCoordinatesFromAddress(user.address);
-    user.coordinates = [lng, lat];
-  }
+  try {
+    // Se só tem endereço, resolve coordenadas
+    if (this.address && !this.coordinates) {
+      const [lat, lng] = await lib.getCoordinatesFromAddress(this.address);
+      this.coordinates = [lng, lat];
+      console.log(
+        `Coordenadas resolvidas - Endereço: ${this.address}, Coordenadas: ${this.coordinates}`,
+      );
+    }
 
-  next();
+    // Se só tem coordenadas, resolve endereço
+    if (this.coordinates && !this.address) {
+      this.address = await lib.getAddressFromCoordinates(this.coordinates);
+      console.log(
+        `Endereço resolvido - Coordenadas: ${this.coordinates}, Endereço: ${this.address}`,
+      );
+    }
+
+    next();
+  } catch (error) {
+    next(error);
+  }
 })
-@modelOptions({ schemaOptions: { validateBeforeSave: false } })
-export class User extends Base {
-  @Prop({ required: true })
-  name!: string;
+@modelOptions({
+  schemaOptions: {
+    timestamps: true,
+    validateBeforeSave: true,
+  },
+})
+export class User {
+  @Prop({
+    required: true,
+    trim: true,
+  })
+  name: string;
 
-  @Prop({ required: true })
-  email!: string;
+  @Prop({
+    required: true,
+    unique: true,
+    lowercase: true,
+    trim: true,
+    validate: {
+      validator: function (v) {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+      },
+      message: "E-mail inválido",
+    },
+  })
+  email: string;
 
-  @Prop({ required: true })
-  address!: string;
+  @Prop({
+    required: [
+      function () {
+        // Requer endereço se não tiver coordenadas
+        return !this.coordinates;
+      },
+      "Forneça endereço ou coordenadas.",
+    ],
+    trim: true,
+  })
+  address?: string;
 
-  @Prop({ required: true, type: () => [Number] })
-  coordinates!: [number, number];
-
-  @Prop({ required: true, default: [], ref: () => Region, type: () => String })
-  regions: Ref<Region>[];
+  @Prop({
+    required: [
+      function () {
+        // Requer coordenadas se não tiver endereço
+        return !this.address;
+      },
+      "Forneça endereço ou coordenadas.",
+    ],
+    type: () => [Number],
+    validate: {
+      validator: function (v) {
+        return (
+          v &&
+          v.length === 2 &&
+          v[0] >= -180 &&
+          v[0] <= 180 &&
+          v[1] >= -90 &&
+          v[1] <= 90
+        );
+      },
+      message: "Coordenadas inválidas. Formato: [longitude, latitude]",
+    },
+  })
+  coordinates?: [number, number];
 }
 
 export const UserModel = getModelForClass(User);
