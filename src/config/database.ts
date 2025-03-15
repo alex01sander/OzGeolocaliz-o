@@ -14,4 +14,4 @@ const init = async function () {
   }
 };
 
-export default init();
+export default init;
