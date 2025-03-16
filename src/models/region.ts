@@ -9,20 +9,16 @@ import {
   modelOptions,
 } from "@typegoose/typegoose";
 
-import ObjectId = mongoose.Types.ObjectId;
+const { ObjectId } = mongoose.Types;
 import { UserModel } from "./user";
 
 class Base extends TimeStamps {
-  @Prop({ required: true, default: () => new ObjectId().toString() })
-  _id: string;
+  @Prop({ required: true, default: () => new ObjectId() })
+  _id: mongoose.Types.ObjectId;
 }
 
 @pre<Region>("save", async function (next) {
   const region = this as Omit<any, keyof Region> & Region;
-
-  if (!region._id) {
-    region._id = new ObjectId().toString();
-  }
 
   if (region.isNew) {
     const user = await UserModel.findOne({ _id: region.user });
@@ -32,9 +28,9 @@ class Base extends TimeStamps {
     }
   }
 
-  next(region.validateSync());
+  next();
 })
-@modelOptions({ schemaOptions: { validateBeforeSave: false } })
+@modelOptions({ schemaOptions: { validateBeforeSave: true } })
 export class Region extends Base {
   @Prop({ required: true })
   name!: string;
@@ -42,13 +38,32 @@ export class Region extends Base {
   @Prop({
     required: true,
     type: () => [[Number]],
+    validate: {
+      validator: function (v) {
+        return Array.isArray(v) && v.length > 0;
+      },
+      message: "Coordinates must be a non-empty array of numbers.",
+    },
   })
   coordinates!: [number, number][][];
 
-  @Prop({ ref: () => UserModel, required: true, type: () => String })
-  user: Ref<typeof UserModel>;
+  @Prop({
+    ref: "User",
+    required: true,
+    type: () => mongoose.Types.ObjectId,
+  })
+  user: Ref<"User">;
 
-  @Prop({ required: true })
+  @Prop({
+    required: true,
+    type: mongoose.Schema.Types.Mixed,
+    validate: {
+      validator: function (v) {
+        return v && v.type === "Polygon" && Array.isArray(v.coordinates);
+      },
+      message: "Location must be a valid GeoJSON Polygon.",
+    },
+  })
   location: { type: "Polygon"; coordinates: [number, number][][] };
 }
 
@@ -57,41 +72,3 @@ export const RegionModel = getModelForClass(Region);
 RegionModel.createIndexes().then(() => {
   console.log("Indexes created for RegionModel");
 });
-
-export async function findRegionsByPoint(
-  lat: number,
-  lng: number,
-  userId: string,
-) {
-  return RegionModel.find({
-    location: {
-      $geoIntersects: {
-        $geometry: {
-          type: "Point",
-          coordinates: [lng, lat],
-        },
-      },
-    },
-    user: userId,
-  });
-}
-
-export async function findRegionsWithinDistance(
-  lat: number,
-  lng: number,
-  distance: number,
-  userId: string,
-) {
-  return RegionModel.find({
-    location: {
-      $near: {
-        $geometry: {
-          type: "Point",
-          coordinates: [lng, lat],
-        },
-        $maxDistance: distance,
-      },
-    },
-    user: userId,
-  });
-}
