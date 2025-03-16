@@ -7,6 +7,7 @@ import {
   Prop,
   Ref,
   modelOptions,
+  index,
 } from "@typegoose/typegoose";
 
 const { ObjectId } = mongoose.Types;
@@ -20,10 +21,21 @@ class Base extends TimeStamps {
 @pre<Region>("save", async function (next) {
   const region = this as Omit<any, keyof Region> & Region;
 
+  // Certifique-se de que o polígono esteja fechado antes de salvar
+  if (region.location && region.location.coordinates) {
+    region.location.coordinates = Region.closePolygon(
+      region.location.coordinates,
+    );
+  }
+
   if (region.isNew) {
     const user = await UserModel.findOne({ _id: region.user });
     if (user) {
-      user.regions.push(region._id);
+      if (!user.regions.includes(region._id)) {
+        user.regions.push(region._id);
+      }
+
+      user.regions = Array.from(new Set(user.regions));
       await user.save({ session: region.$session() });
     }
   }
@@ -31,21 +43,10 @@ class Base extends TimeStamps {
   next();
 })
 @modelOptions({ schemaOptions: { validateBeforeSave: true } })
+@index({ location: "2dsphere" }) // Índice geoespacial necessário para consultas
 export class Region extends Base {
   @Prop({ required: true })
   name!: string;
-
-  @Prop({
-    required: true,
-    type: () => [[Number]],
-    validate: {
-      validator: function (v) {
-        return Array.isArray(v) && v.length > 0;
-      },
-      message: "Coordinates must be a non-empty array of numbers.",
-    },
-  })
-  coordinates!: [number, number][][];
 
   @Prop({
     ref: "User",
@@ -59,12 +60,50 @@ export class Region extends Base {
     type: mongoose.Schema.Types.Mixed,
     validate: {
       validator: function (v) {
-        return v && v.type === "Polygon" && Array.isArray(v.coordinates);
+        return (
+          v &&
+          v.type === "Polygon" &&
+          Array.isArray(v.coordinates) &&
+          Array.isArray(v.coordinates[0]) &&
+          v.coordinates[0].length >= 4 && // Um polígono precisa de pelo menos 4 pontos
+          Region.areCoordinatesValid(v.coordinates[0])
+        );
       },
-      message: "Location must be a valid GeoJSON Polygon.",
+      message:
+        "Location must be a valid GeoJSON Polygon with at least 4 points.",
     },
   })
-  location: { type: "Polygon"; coordinates: [number, number][][] };
+  location: {
+    type: "Polygon";
+    coordinates: [number, number][][];
+  };
+
+  static areCoordinatesValid(coordinates: [number, number][]): boolean {
+    // Verifica se as coordenadas estão dentro de limites válidos
+    return coordinates.every(
+      ([lng, lat]) => lng >= -180 && lng <= 180 && lat >= -90 && lat <= 90,
+    );
+  }
+
+  static closePolygon(coordinates: [number, number][][]): [number, number][][] {
+    if (coordinates.length === 0 || coordinates[0].length === 0) {
+      return coordinates;
+    }
+
+    const ring = coordinates[0];
+    const firstPoint = ring[0];
+    const lastPoint = ring[ring.length - 1];
+
+    if (
+      !lastPoint ||
+      firstPoint[0] !== lastPoint[0] ||
+      firstPoint[1] !== lastPoint[1]
+    ) {
+      ring.push([...firstPoint]);
+    }
+
+    return coordinates;
+  }
 }
 
 export const RegionModel = getModelForClass(Region);
