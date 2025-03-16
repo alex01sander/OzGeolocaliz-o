@@ -5,6 +5,53 @@ dotenv.config();
 
 class GeoLib {
   private googleApiKey = process.env.GOOGLE_API_KEY || "";
+  /**
+   * @swagger
+   * components:
+   *   schemas:
+   *     Coordinates:
+   *       type: array
+   *       items:
+   *         type: number
+   *       description: Array of latitude and longitude
+   *       example: [40.7128, -74.0060]
+   *     Address:
+   *       type: string
+   *       description: Address corresponding to the given coordinates.
+   *       example: "New York, NY, USA"
+   */
+
+  /**
+   * @swagger
+   * /geocode/address:
+   *   get:
+   *     summary: Get address from coordinates
+   *     description: Queries the Google Geocoding API to get the address for the provided coordinates (latitude, longitude).
+   *     parameters:
+   *       - in: query
+   *         name: lat
+   *         required: true
+   *         description: Latitude of the coordinates
+   *         schema:
+   *           type: number
+   *       - in: query
+   *         name: lng
+   *         required: true
+   *         description: Longitude of the coordinates
+   *         schema:
+   *           type: number
+   *     responses:
+   *       200:
+   *         description: Address found successfully
+   *         content:
+   *           application/json:
+   *             example:
+   *               address: "New York, NY, USA"
+   *       400:
+   *         description: Invalid coordinates
+   *       500:
+   *         description: Error fetching address from coordinates
+   */
 
   public async getAddressFromCoordinates(
     coordinates: [number, number],
@@ -34,6 +81,36 @@ class GeoLib {
     }
   }
 
+  /**
+   * @swagger
+   * /geocode/coordinates:
+   *   get:
+   *     summary: Get coordinates from address
+   *     description: Queries the Google Geocoding API to get the coordinates (latitude, longitude) for the provided address.
+   *     parameters:
+   *       - in: query
+   *         name: address
+   *         required: true
+   *         description: Address to geocode
+   *         schema:
+   *           type: string
+   *       - in: query
+   *         name: key
+   *         description: Google API key (optional in URL, provided by env)
+   *         schema:
+   *           type: string
+   *     responses:
+   *       200:
+   *         description: Coordinates found successfully
+   *         content:
+   *           application/json:
+   *             example:
+   *               coordinates: [40.7128, -74.0060]
+   *       400:
+   *         description: Invalid address or address not found
+   *       500:
+   *         description: Error fetching coordinates from address
+   */
   public async getCoordinatesFromAddress(
     address: string,
   ): Promise<[number, number]> {

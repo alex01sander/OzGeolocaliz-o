@@ -18,10 +18,72 @@ class Base extends TimeStamps {
   _id: mongoose.Types.ObjectId;
 }
 
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Region:
+ *       type: object
+ *       properties:
+ *         name:
+ *           type: string
+ *           description: Name of the region
+ *         user:
+ *           type: string
+ *           description: ID of the user associated with the region
+ *         location:
+ *           type: object
+ *           description: GeoJSON Polygon representing the location of the region
+ *           properties:
+ *             type:
+ *               type: string
+ *               description: The type of the location (Polygon)
+ *             coordinates:
+ *               type: array
+ *               items:
+ *                 type: array
+ *                 items:
+ *                   type: number
+ *               description: Array of coordinates defining the region's boundaries
+ *       required:
+ *         - name
+ *         - user
+ *         - location
+ */
+
+/**
+ * @swagger
+ * /regions:
+ *   post:
+ *     summary: Create a new region
+ *     description: Creates a new region with name, user ID, and location (GeoJSON polygon).
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Region'
+ *     responses:
+ *       201:
+ *         description: Region created successfully
+ *         content:
+ *           application/json:
+ *             example:
+ *               id: 1
+ *               name: 'North Region'
+ *               user: '60d5f847ed3e1f1f1c0b13a9'
+ *               location:
+ *                 type: "Polygon"
+ *                 coordinates: [[[40.7128, -74.0060], [40.7138, -74.0050], [40.7118, -74.0050], [40.7128, -74.0060]]]
+ *               createdAt: '2025-03-16T12:00:00Z'
+ *       400:
+ *         description: Validation error
+ *       500:
+ *         description: Internal server error
+ */
 @pre<Region>("save", async function (next) {
   const region = this as Omit<any, keyof Region> & Region;
 
-  // Certifique-se de que o polígono esteja fechado antes de salvar
   if (region.location && region.location.coordinates) {
     region.location.coordinates = Region.closePolygon(
       region.location.coordinates,
@@ -43,7 +105,7 @@ class Base extends TimeStamps {
   next();
 })
 @modelOptions({ schemaOptions: { validateBeforeSave: true } })
-@index({ location: "2dsphere" }) // Índice geoespacial necessário para consultas
+@index({ location: "2dsphere" })
 export class Region extends Base {
   @Prop({ required: true })
   name!: string;
@@ -65,7 +127,7 @@ export class Region extends Base {
           v.type === "Polygon" &&
           Array.isArray(v.coordinates) &&
           Array.isArray(v.coordinates[0]) &&
-          v.coordinates[0].length >= 4 && // Um polígono precisa de pelo menos 4 pontos
+          v.coordinates[0].length >= 4 &&
           Region.areCoordinatesValid(v.coordinates[0])
         );
       },
@@ -79,7 +141,6 @@ export class Region extends Base {
   };
 
   static areCoordinatesValid(coordinates: [number, number][]): boolean {
-    // Verifica se as coordenadas estão dentro de limites válidos
     return coordinates.every(
       ([lng, lat]) => lng >= -180 && lng <= 180 && lat >= -90 && lat <= 90,
     );

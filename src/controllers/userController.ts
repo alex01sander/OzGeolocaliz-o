@@ -2,7 +2,59 @@ import { Request, Response } from "express";
 import { UserModel } from "../models/user";
 import lib from "../utils/lib";
 import mongoose from "mongoose";
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     User:
+ *       type: object
+ *       properties:
+ *         name:
+ *           type: string
+ *           description: Name of the user
+ *         email:
+ *           type: string
+ *           description: Email of the user
+ *         address:
+ *           type: string
+ *           description: Address of the user
+ *         coordinates:
+ *           type: array
+ *           description: Coordinates of the user
+ *           items:
+ *             type: number
+ *       required:
+ *         - name
+ *         - email
+ */
 
+/**
+ * @swagger
+ * /users:
+ *   post:
+ *     summary: Create a new user
+ *     description: Creates a new user with name, email, address, and coordinates.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/User'
+ *     responses:
+ *       201:
+ *         description: User created successfully
+ *         content:
+ *           application/json:
+ *             example:
+ *               id: 1
+ *               name: 'John Doe'
+ *               email: 'johndoe@example.com'
+ *               createdAt: '2025-03-16T12:00:00Z'
+ *       400:
+ *         description: Validation error
+ *       500:
+ *         description: Internal server error
+ */
 export const createUser = async (req: Request, res: Response) => {
   try {
     const { name, email, address, coordinates } = req.body;
@@ -75,6 +127,43 @@ export const createUser = async (req: Request, res: Response) => {
   }
 };
 
+/**
+ * @swagger
+ * /users:
+ *   get:
+ *     summary: Get all users
+ *     description: Retrieves a list of all users with pagination.
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         description: Page number for pagination
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *       - in: query
+ *         name: limit
+ *         description: Number of users per page
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *     responses:
+ *       200:
+ *         description: List of all users
+ *         content:
+ *           application/json:
+ *             example:
+ *               users:
+ *                 - id: 1
+ *                   name: 'John Doe'
+ *                   email: 'johndoe@example.com'
+ *               pagination:
+ *                 currentPage: 1
+ *                 totalPages: 5
+ *                 totalItems: 50
+ *                 itemsPerPage: 10
+ *       500:
+ *         description: Internal server error
+ */
 export const getUsers = async (req: Request, res: Response) => {
   try {
     console.log("Starting query for all users");
@@ -118,6 +207,37 @@ export const getUsers = async (req: Request, res: Response) => {
   }
 };
 
+/**
+ * @swagger
+ * /users/{id}:
+ *   get:
+ *     summary: Get a user by ID
+ *     description: Retrieves a specific user by their ID.
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: ID of the user to retrieve
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: User found
+ *         content:
+ *           application/json:
+ *             example:
+ *               id: 1
+ *               name: 'John Doe'
+ *               email: 'johndoe@example.com'
+ *               createdAt: '2025-03-16T12:00:00Z'
+ *       400:
+ *         description: Invalid user ID
+ *       404:
+ *         description: User not found
+ *       500:
+ *         description: Internal server error
+ */
+
 export const getUserById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -146,6 +266,42 @@ export const getUserById = async (req: Request, res: Response) => {
   }
 };
 
+/**
+ * @swagger
+ * /users/{id}:
+ *   put:
+ *     summary: Update an existing user
+ *     description: Updates an existing user's details by ID.
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: ID of the user to update
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/User'
+ *     responses:
+ *       200:
+ *         description: User updated successfully
+ *         content:
+ *           application/json:
+ *             example:
+ *               id: 1
+ *               name: 'John Doe Updated'
+ *               email: 'johndoe.updated@example.com'
+ *               createdAt: '2025-03-16T12:00:00Z'
+ *       400:
+ *         description: Invalid user ID or validation error
+ *       404:
+ *         description: User not found
+ *       500:
+ *         description: Internal server error
+ */
 export const updateUser = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -215,6 +371,30 @@ export const updateUser = async (req: Request, res: Response) => {
     });
   }
 };
+
+/**
+ * @swagger
+ * /users/{id}:
+ *   delete:
+ *     summary: Delete a user by ID
+ *     description: Deletes a user by their ID.
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: ID of the user to delete
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: User deleted successfully
+ *       400:
+ *         description: Invalid user ID
+ *       404:
+ *         description: User not found
+ *       500:
+ *         description: Internal server error
+ */
 
 export const deleteUser = async (req: Request, res: Response) => {
   try {

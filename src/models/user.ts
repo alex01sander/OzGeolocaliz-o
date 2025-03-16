@@ -9,10 +9,66 @@ import {
   modelOptions,
 } from "@typegoose/typegoose";
 import lib from "../utils/lib";
-
-import ObjectId = mongoose.Types.ObjectId;
 import { RegionModel } from "./region";
 
+import ObjectId = mongoose.Types.ObjectId;
+
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     User:
+ *       type: object
+ *       properties:
+ *         name:
+ *           type: string
+ *           description: User's name
+ *         email:
+ *           type: string
+ *           description: User's email
+ *         address:
+ *           type: string
+ *           description: User's address
+ *         coordinates:
+ *           type: array
+ *           items:
+ *             type: number
+ *           description: User's coordinates (latitude and longitude)
+ *       required:
+ *         - name
+ *         - email
+ *         - address
+ */
+
+/**
+ * @swagger
+ * /user:
+ *   post:
+ *     summary: Register a new user
+ *     description: Registers a new user with name, email, address, and/or coordinates.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/User'
+ *     responses:
+ *       201:
+ *         description: User successfully created
+ *         content:
+ *           application/json:
+ *             example:
+ *               id: 1
+ *               name: 'João Silva'
+ *               email: 'joao.silva@example.com'
+ *               address: '123 Example Street'
+ *               coordinates: [40.7128, -74.0060]
+ *               createdAt: '2025-03-16T12:00:00Z'
+ *       400:
+ *         description: Validation error
+ *       500:
+ *         description: Internal server error
+ */
 @pre<User>("save", async function (next) {
   if (this.address && !this.coordinates) {
     try {
