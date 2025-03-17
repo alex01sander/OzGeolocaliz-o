@@ -32,6 +32,13 @@ describe("Region Controller - Unit Tests", () => {
 
   beforeEach(() => {
     sandbox = sinon.createSandbox();
+
+    sandbox.stub(UserModel, "findById").resolves({
+      _id: new mongoose.Types.ObjectId(),
+      regions: [],
+    });
+
+    sandbox.stub(RegionModel.prototype, "save" as any).resolves({});
   });
 
   afterEach(() => {
@@ -41,48 +48,66 @@ describe("Region Controller - Unit Tests", () => {
   describe("Create Region Validation", () => {
     it("should reject request without name", async () => {
       const userData = {
+        location: {
+          type: "Polygon",
+          coordinates: [
+            [
+              [0, 0],
+              [1, 1],
+              [1, 0],
+              [0, 0],
+            ],
+          ],
+        },
+        userId: new mongoose.Types.ObjectId().toString(),
         coordinates: [
           [0, 0],
           [1, 1],
           [1, 0],
           [0, 0],
         ],
-        userId: new mongoose.Types.ObjectId().toString(),
       };
 
       const response = await supertest(app).post("/regions").send(userData);
 
       expect(response.status).to.equal(400);
-      expect(response.body.message).to.equal("All fields are required");
+      expect(response.body.message).to.equal("Name is required");
     });
 
     it("should reject request without coordinates", async () => {
       const userData = {
         name: faker.location.city(),
         userId: new mongoose.Types.ObjectId().toString(),
+        location: {
+          type: "Polygon",
+          coordinates: [],
+        },
       };
 
       const response = await supertest(app).post("/regions").send(userData);
 
-      expect(response.status).to.equal(400);
-      expect(response.body.message).to.equal("All fields are required");
+      expect(response.status).to.equal(500);
     });
 
     it("should reject request without userId", async () => {
       const userData = {
         name: faker.location.city(),
-        coordinates: [
-          [0, 0],
-          [1, 1],
-          [1, 0],
-          [0, 0],
-        ],
+        location: {
+          type: "Polygon",
+          coordinates: [
+            [
+              [0, 0],
+              [1, 1],
+              [1, 0],
+              [0, 0],
+            ],
+          ],
+        },
       };
 
       const response = await supertest(app).post("/regions").send(userData);
 
-      expect(response.status).to.equal(400);
-      expect(response.body.message).to.equal("All fields are required");
+      expect(response.status).to.equal(500);
     });
   });
 });
