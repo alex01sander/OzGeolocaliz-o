@@ -3,6 +3,7 @@ import userRoutes from "./routes/userRoutes";
 import regionRoutes from "./routes/regionRoutes";
 import swaggerJSDoc from "swagger-jsdoc";
 import swaggerUi from "swagger-ui-express";
+import { StatusCodes } from "http-status-codes";
 
 const server = express();
 
@@ -37,7 +38,7 @@ server.use((req, res, next) => {
   );
 
   if (req.method === "OPTIONS") {
-    return res.status(200).end();
+    return res.status(StatusCodes.OK).end();
   }
 
   next();
