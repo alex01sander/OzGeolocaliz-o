@@ -128,7 +128,7 @@ export class Region extends Base {
           Array.isArray(v.coordinates) &&
           Array.isArray(v.coordinates[0]) &&
           v.coordinates[0].length >= 4 &&
-          Region.areCoordinatesValid(v.coordinates[0])
+          Region.areCoordinatesValid(v.coordinates[0]) // Verifica se as coordenadas estão dentro dos limites válidos
         );
       },
       message:
@@ -137,7 +137,7 @@ export class Region extends Base {
   })
   location: {
     type: "Polygon";
-    coordinates: [number, number][][];
+    coordinates: [number, number][][]; // GeoJSON Polygon
   };
 
   static areCoordinatesValid(coordinates: [number, number][]): boolean {
@@ -160,7 +160,7 @@ export class Region extends Base {
       firstPoint[0] !== lastPoint[0] ||
       firstPoint[1] !== lastPoint[1]
     ) {
-      ring.push([...firstPoint]);
+      ring.push([...firstPoint]); // Fecha o polígono
     }
 
     return coordinates;
