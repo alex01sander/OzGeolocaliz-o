@@ -32,6 +32,7 @@ import mongoose from "mongoose";
  * @swagger
  * /users:
  *   post:
+ *     tags: [User]
  *     summary: Create a new user
  *     description: Creates a new user with name, email, address, and coordinates.
  *     requestBody:
@@ -131,6 +132,7 @@ export const createUser = async (req: Request, res: Response) => {
  * @swagger
  * /users:
  *   get:
+ *     tags: [User]
  *     summary: Get all users
  *     description: Retrieves a list of all users with pagination.
  *     parameters:
@@ -211,6 +213,7 @@ export const getUsers = async (req: Request, res: Response) => {
  * @swagger
  * /users/{id}:
  *   get:
+ *     tags: [User]
  *     summary: Get a user by ID
  *     description: Retrieves a specific user by their ID.
  *     parameters:
@@ -270,6 +273,7 @@ export const getUserById = async (req: Request, res: Response) => {
  * @swagger
  * /users/{id}:
  *   put:
+ *     tags: [User]
  *     summary: Update an existing user
  *     description: Updates an existing user's details by ID.
  *     parameters:
@@ -376,6 +380,7 @@ export const updateUser = async (req: Request, res: Response) => {
  * @swagger
  * /users/{id}:
  *   delete:
+ *     tags: [User]
  *     summary: Delete a user by ID
  *     description: Deletes a user by their ID.
  *     parameters:
