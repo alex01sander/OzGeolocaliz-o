@@ -63,13 +63,14 @@ export const createRegion = async (req: Request, res: Response) => {
   try {
     const { name, coordinates, userId } = req.body;
 
-    if (!name || !coordinates || !userId) {
-      return res.status(400).json({ message: "All fields are required" });
-    }
-
-    if (!Array.isArray(coordinates) || !Array.isArray(coordinates[0])) {
+    if (
+      coordinates.length < 4 ||
+      coordinates[0][0] !== coordinates[coordinates.length - 1][0] ||
+      coordinates[0][1] !== coordinates[coordinates.length - 1][1]
+    ) {
       return res.status(400).json({
-        message: "Coordinates must be a valid GeoJSON polygon array",
+        message:
+          "Coordinates must form a valid, closed GeoJSON Polygon with at least 4 points.",
       });
     }
 
@@ -92,10 +93,9 @@ export const createRegion = async (req: Request, res: Response) => {
     return res.status(201).json(region);
   } catch (error) {
     console.error("Error creating region:", error);
-    return res.status(500).json({
-      message: "Internal server error",
-      error: error instanceof Error ? error.message : String(error),
-    });
+    return res
+      .status(500)
+      .json({ message: "Internal server error", error: error.message });
   }
 };
 
@@ -241,16 +241,33 @@ export const updateRegion = async (req: Request, res: Response) => {
     if (name) region.name = name;
 
     if (coordinates) {
-      // Certifique-se de construir o GeoJSON corretamente
-      if (!Array.isArray(coordinates) || !Array.isArray(coordinates[0])) {
+      if (!Array.isArray(coordinates)) {
         return res.status(400).json({
-          message: "Coordinates must be a valid GeoJSON polygon array",
+          message: "Coordinates must be a valid array",
+        });
+      }
+
+      let validCoordinates = [...coordinates];
+      if (
+        !validCoordinates.length ||
+        validCoordinates[0][0] !==
+          validCoordinates[validCoordinates.length - 1][0] ||
+        validCoordinates[0][1] !==
+          validCoordinates[validCoordinates.length - 1][1]
+      ) {
+        validCoordinates.push([...validCoordinates[0]]);
+      }
+
+      if (validCoordinates.length < 4) {
+        return res.status(400).json({
+          message:
+            "A polygon must have at least 4 points (including the closing point)",
         });
       }
 
       region.location = {
         type: "Polygon",
-        coordinates: [coordinates],
+        coordinates: [validCoordinates],
       };
     }
 
@@ -259,10 +276,12 @@ export const updateRegion = async (req: Request, res: Response) => {
     return res.status(200).json(region);
   } catch (error) {
     console.error(`Error updating region - ID: ${id}`, error);
-    return res.status(500).json({ message: "Internal server error" });
+    return res.status(500).json({
+      message: "Internal server error",
+      error: error instanceof Error ? error.message : String(error),
+    });
   }
 };
-
 /**
  * @swagger
  * /regions/{id}:
@@ -390,6 +409,7 @@ export const findRegionsContainingPoint = async (
  *   get:
  *     summary: Find regions near a point
  *     description: Finds regions within a specified distance from a point (longitude, latitude).
+ *     tags: [Regions]
  *     parameters:
  *       - in: query
  *         name: longitude
