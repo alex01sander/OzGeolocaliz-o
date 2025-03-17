@@ -34,6 +34,7 @@ import { UserModel } from "../models/user";
  * @swagger
  * /regions:
  *   post:
+ *     tags: [Region]
  *     summary: Create a new region
  *     description: Creates a new region with name and location (GeoJSON polygon).
  *     requestBody:
@@ -103,6 +104,7 @@ export const createRegion = async (req: Request, res: Response) => {
  * @swagger
  * /regions:
  *   get:
+ *     tags: [Region]
  *     summary: Get all regions
  *     description: Retrieves all regions from the database.
  *     responses:
@@ -141,6 +143,7 @@ export const getRegions = async (req: Request, res: Response) => {
  * @swagger
  * /regions/{id}:
  *   get:
+ *     tags: [Region]
  *     summary: Get a region by ID
  *     description: Retrieves a region by its ID.
  *     parameters:
@@ -193,6 +196,7 @@ export const getRegionById = async (req: Request, res: Response) => {
  * @swagger
  * /regions/{id}:
  *   put:
+ *     tags: [Region]
  *     summary: Update an existing region
  *     description: Updates the details of an existing region by ID.
  *     parameters:
@@ -227,7 +231,6 @@ export const getRegionById = async (req: Request, res: Response) => {
  *       500:
  *         description: Internal server error
  */
-
 export const updateRegion = async (req: Request, res: Response) => {
   const { id } = req.params;
   const { name, coordinates } = req.body;
@@ -286,6 +289,7 @@ export const updateRegion = async (req: Request, res: Response) => {
  * @swagger
  * /regions/{id}:
  *   delete:
+ *     tags: [Region]
  *     summary: Delete a region by ID
  *     description: Deletes a region by ID.
  *     parameters:
@@ -323,6 +327,7 @@ export const deleteRegion = async (req: Request, res: Response) => {
  * @swagger
  * /regions/point:
  *   get:
+ *     tags: [Region]
  *     summary: Find regions containing a specific point
  *     description: Finds regions that contain the specified point (longitude and latitude).
  *     parameters:
@@ -407,9 +412,9 @@ export const findRegionsContainingPoint = async (
  * @swagger
  * /regions/near:
  *   get:
+ *     tags: [Region]
  *     summary: Find regions near a point
  *     description: Finds regions within a specified distance from a point (longitude, latitude).
- *     tags: [Regions]
  *     parameters:
  *       - in: query
  *         name: longitude
