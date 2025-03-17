@@ -5,6 +5,8 @@ import {
   getRegionById,
   updateRegion,
   deleteRegion,
+  findRegionsContainingPoint,
+  findRegionsNearPoint,
 } from "../controllers/regionController";
 
 const router = Router();
@@ -171,5 +173,6 @@ router.put("/regions/:id", updateRegion);
  *         description: Internal server error
  */
 router.delete("/regions/:id", deleteRegion);
-
+router.get("/regions/point", findRegionsContainingPoint);
+router.get("/regions/near", findRegionsNearPoint);
 export default router;
