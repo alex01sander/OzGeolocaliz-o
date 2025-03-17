@@ -41,7 +41,7 @@ describe("Region Unit Tests", () => {
           [1, 0],
           [1, 1],
         ],
-        // Non-numeric coordinates
+
         [
           [0, 0],
           [1, "a"],
