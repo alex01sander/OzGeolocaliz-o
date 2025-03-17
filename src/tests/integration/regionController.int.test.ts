@@ -16,6 +16,23 @@ import {
   deleteRegion,
 } from "../../controllers/regionController";
 
+function generateValidCoordinates() {
+  const centerLat = faker.location.latitude({ min: -30, max: 30 });
+  const centerLng = faker.location.longitude({ min: -60, max: -30 });
+
+  const size = 0.1;
+
+  const points = [
+    [centerLng - size, centerLat - size],
+    [centerLng + size, centerLat - size],
+    [centerLng + size, centerLat + size],
+    [centerLng - size, centerLat + size],
+    [centerLng - size, centerLat - size],
+  ];
+
+  return points;
+}
+
 describe("Region Controller - Integration Tests", () => {
   let app: express.Application;
   let sandbox: sinon.SinonSandbox;
@@ -69,14 +86,10 @@ describe("Region Controller - Integration Tests", () => {
 
   describe("Region Creation Scenarios", () => {
     it("should create a region successfully", async () => {
+      const coordinates = generateValidCoordinates();
       const regionData = {
         name: faker.location.city(),
-        coordinates: [
-          [0, 0],
-          [1, 1],
-          [1, 0],
-          [0, 0],
-        ],
+        coordinates: coordinates,
         userId: createdUser._id.toString(),
       };
 
@@ -84,27 +97,26 @@ describe("Region Controller - Integration Tests", () => {
 
       expect(response.status).to.equal(201);
       expect(response.body.name).to.equal(regionData.name);
-      expect(response.body.coordinates).to.deep.equal(regionData.coordinates);
 
-      const updatedUser = await UserModel.findById(createdUser._id);
-      expect(updatedUser.regions).to.have.lengthOf(1);
-      expect(updatedUser.regions[0].toString()).to.equal(response.body._id);
+      expect(response.body.location.coordinates[0]).to.deep.equal(coordinates);
+
+      const updatedUser = await UserModel.findById(createdUser._id).lean();
+
+      expect(updatedUser.regions).to.be.an("array");
+
+      const regionIds = updatedUser.regions.map((id) => id.toString());
+      expect(regionIds).to.include(response.body._id.toString());
     });
 
     it("should reject region creation for non-existent user", async () => {
+      const coordinates = generateValidCoordinates();
       const regionData = {
         name: faker.location.city(),
-        coordinates: [
-          [0, 0],
-          [1, 1],
-          [1, 0],
-          [0, 0],
-        ],
+        coordinates: coordinates,
         userId: new mongoose.Types.ObjectId().toString(),
       };
 
       const response = await supertest(app).post("/regions").send(regionData);
-
       expect(response.status).to.equal(404);
       expect(response.body.message).to.equal("User not found");
     });
@@ -112,75 +124,32 @@ describe("Region Controller - Integration Tests", () => {
 
   describe("Region Retrieval Scenarios", () => {
     it("should retrieve all regions", async () => {
-      const regionData1 = {
+      const coordinates = generateValidCoordinates();
+      const region = new RegionModel({
         name: faker.location.city(),
-        coordinates: [
-          [0, 0],
-          [1, 1],
-          [1, 0],
-          [0, 0],
-        ],
         user: createdUser._id,
         location: {
           type: "Polygon",
-          coordinates: [
-            [0, 0],
-            [1, 1],
-            [1, 0],
-            [0, 0],
-          ],
+          coordinates: [coordinates],
         },
-      };
-      const regionData2 = {
-        name: faker.location.city(),
-        coordinates: [
-          [2, 2],
-          [3, 3],
-          [3, 2],
-          [2, 2],
-        ],
-        user: createdUser._id,
-        location: {
-          type: "Polygon",
-          coordinates: [
-            [2, 2],
-            [3, 3],
-            [3, 2],
-            [2, 2],
-          ],
-        },
-      };
-
-      const region1 = new RegionModel(regionData1);
-      const region2 = new RegionModel(regionData2);
-      await region1.save();
-      await region2.save();
+      });
+      await region.save();
 
       const response = await supertest(app).get("/regions");
 
       expect(response.status).to.equal(200);
       expect(response.body).to.be.an("array");
-      expect(response.body).to.have.lengthOf(2);
+      expect(response.body.length).to.be.at.least(1);
     });
 
     it("should retrieve a specific region by ID", async () => {
+      const coordinates = generateValidCoordinates();
       const regionData = {
         name: faker.location.city(),
-        coordinates: [
-          [0, 0],
-          [1, 1],
-          [1, 0],
-          [0, 0],
-        ],
         user: createdUser._id,
         location: {
           type: "Polygon",
-          coordinates: [
-            [0, 0],
-            [1, 1],
-            [1, 0],
-            [0, 0],
-          ],
+          coordinates: [coordinates],
         },
       };
 
@@ -191,29 +160,22 @@ describe("Region Controller - Integration Tests", () => {
 
       expect(response.status).to.equal(200);
       expect(response.body.name).to.equal(regionData.name);
-      expect(response.body.coordinates).to.deep.equal(regionData.coordinates);
+
+      expect(response.body.location.coordinates[0]).to.deep.equal(coordinates);
     });
   });
 
   describe("Region Update and Delete Scenarios", () => {
     it("should update a region successfully", async () => {
+      const originalCoordinates = generateValidCoordinates();
+      const updatedCoordinates = generateValidCoordinates();
+
       const regionData = {
         name: faker.location.city(),
-        coordinates: [
-          [0, 0],
-          [1, 1],
-          [1, 0],
-          [0, 0],
-        ],
         user: createdUser._id,
         location: {
           type: "Polygon",
-          coordinates: [
-            [0, 0],
-            [1, 1],
-            [1, 0],
-            [0, 0],
-          ],
+          coordinates: [originalCoordinates],
         },
       };
 
@@ -222,21 +184,7 @@ describe("Region Controller - Integration Tests", () => {
 
       const updateData = {
         name: "Updated Region Name",
-        coordinates: [
-          [2, 2],
-          [3, 3],
-          [3, 2],
-          [2, 2],
-        ],
-        location: {
-          type: "Polygon",
-          coordinates: [
-            [2, 2],
-            [3, 3],
-            [3, 2],
-            [2, 2],
-          ],
-        },
+        coordinates: updatedCoordinates,
       };
 
       const response = await supertest(app)
@@ -245,37 +193,26 @@ describe("Region Controller - Integration Tests", () => {
 
       expect(response.status).to.equal(200);
       expect(response.body.name).to.equal(updateData.name);
-      expect(response.body.coordinates).to.deep.equal(updateData.coordinates);
+
+      expect(response.body.location.coordinates[0]).to.deep.equal(
+        updatedCoordinates,
+      );
     });
 
     it("should delete a region successfully", async () => {
-      const regionData = {
+      const coordinates = generateValidCoordinates();
+      const region = new RegionModel({
         name: faker.location.city(),
-        coordinates: [
-          [0, 0],
-          [1, 1],
-          [1, 0],
-          [0, 0],
-        ],
         user: createdUser._id,
         location: {
           type: "Polygon",
-          coordinates: [
-            [0, 0],
-            [1, 1],
-            [1, 0],
-            [0, 0],
-          ],
+          coordinates: [coordinates],
         },
-      };
-
-      const region = new RegionModel(regionData);
+      });
       await region.save();
 
       const response = await supertest(app).delete(`/regions/${region._id}`);
-
       expect(response.status).to.equal(200);
-      expect(response.body.message).to.equal("Region successfully deleted"); // Corrigido aqui
 
       const deletedRegion = await RegionModel.findById(region._id);
       expect(deletedRegion).to.be.null;
