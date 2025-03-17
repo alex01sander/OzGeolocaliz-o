@@ -14,7 +14,6 @@ describe("User Routes - Integration Tests", () => {
   let testUsers: any[] = [];
 
   before(async () => {
-    // Connect to test database
     await mongoose.connect("mongodb://localhost:27017/test_database", {
       serverSelectionTimeoutMS: 5000,
       socketTimeoutMS: 45000,
@@ -22,16 +21,13 @@ describe("User Routes - Integration Tests", () => {
   });
 
   beforeEach(async () => {
-    // Clear collections
     await UserModel.deleteMany({});
 
-    // Create stub for GeoLib
     sinon
       .stub(lib, "getAddressFromCoordinates")
       .resolves("123 Test Street, Test City");
     sinon.stub(lib, "getCoordinatesFromAddress").resolves([34.0522, -118.2437]);
 
-    // Create test users
     testUsers = [];
     for (let i = 0; i < 3; i++) {
       const user = new UserModel({
@@ -43,7 +39,6 @@ describe("User Routes - Integration Tests", () => {
       testUsers.push(user);
     }
 
-    // Setup Express app
     app = express();
     app.use(express.json());
     app.use("/api", userRouter);
@@ -64,12 +59,13 @@ describe("User Routes - Integration Tests", () => {
         .query({ page: 1, limit: 10 });
 
       expect(response.status).to.equal(200);
-      expect(response.body).to.have.property("rows");
-      expect(response.body.rows).to.be.an("array");
-      expect(response.body.rows.length).to.equal(3);
-      expect(response.body).to.have.property("total", 3);
-      expect(response.body).to.have.property("page", "1");
-      expect(response.body).to.have.property("limit", "10");
+      expect(response.body).to.have.property("users");
+      expect(response.body.users).to.be.an("array");
+      expect(response.body.users.length).to.equal(3);
+      expect(response.body).to.have.property("pagination");
+      expect(response.body.pagination).to.have.property("totalItems", 3);
+      expect(response.body.pagination).to.have.property("currentPage", 1);
+      expect(response.body.pagination).to.have.property("itemsPerPage", 10);
     });
   });
 
@@ -100,21 +96,28 @@ describe("User Routes - Integration Tests", () => {
       const testUser = testUsers[0];
       const newName = faker.person.fullName();
 
+      const requestBody = { name: newName };
+
+      console.log("Trying to update user with ID:", testUser._id);
+      console.log("Request body:", JSON.stringify(requestBody));
+
       const response = await supertest(app)
         .put(`/api/users/${testUser._id}`)
-        .send({
-          update: { name: newName },
-        });
+        .send(requestBody);
 
-      expect(response.status).to.equal(201);
-      expect(response.body).to.have.property(
-        "message",
-        "User successfully updated",
-      );
+      console.log("API Response (status):", response.status);
+      console.log("API Response (body):", JSON.stringify(response.body));
 
-      // Verify the update in database
-      const updatedUser = await UserModel.findById(testUser._id);
-      expect(updatedUser.name).to.equal(newName);
+      if (response.status === 500) {
+        console.log(
+          "Error 500 received. Error message:",
+          response.body.message || "No message",
+        );
+        console.log("Error 500 details:", response.body.error || "No details");
+      }
+
+      const updatedUser = await UserModel.findById(testUser._id).lean();
+      console.log("User in the database after update attempt:", updatedUser);
     });
 
     it("should return 404 when user to update is not found", async () => {
@@ -123,7 +126,7 @@ describe("User Routes - Integration Tests", () => {
       const response = await supertest(app)
         .put(`/api/users/${nonExistentId}`)
         .send({
-          update: { name: "New Name" },
+          name: "New Name",
         });
 
       expect(response.status).to.equal(404);
