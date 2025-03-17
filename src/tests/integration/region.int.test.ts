@@ -37,24 +37,21 @@ describe("Region Model - Unit Tests", () => {
         location: {
           type: "Polygon",
           coordinates: [
-            [0, 0],
-            [1, 1],
-            [1, 0],
-            [0, 0],
+            [
+              [0, 0],
+              [1, 1],
+              [1, 0],
+              [0, 0],
+            ],
           ],
         },
       };
 
       const region = new RegionModel(regionData);
 
-      try {
-        const validationResult = region.validateSync();
-        console.log("Validation Result:", validationResult);
-        expect(validationResult).to.be.undefined;
-      } catch (error) {
-        console.error("Validation Error:", error);
-        throw error;
-      }
+      const validationResult = region.validateSync();
+      console.log("Validation Result:", validationResult);
+      expect(validationResult).to.be.undefined;
     });
 
     it("should fail validation without name", () => {
@@ -70,10 +67,12 @@ describe("Region Model - Unit Tests", () => {
         location: {
           type: "Polygon",
           coordinates: [
-            [0, 0],
-            [1, 1],
-            [1, 0],
-            [0, 0],
+            [
+              [0, 0],
+              [1, 1],
+              [1, 0],
+              [0, 0],
+            ],
           ],
         },
       };
@@ -87,25 +86,33 @@ describe("Region Model - Unit Tests", () => {
 
     it("should fail validation without coordinates", () => {
       const userId = new mongoose.Types.ObjectId();
+
       const regionData = {
         name: faker.location.city(),
         user: userId,
         location: {
           type: "Polygon",
           coordinates: [
-            [0, 0],
-            [1, 1],
-            [1, 0],
-            [0, 0],
+            [
+              [0, 0],
+              [1, 1],
+              [1, 0],
+              [0, 0],
+            ],
           ],
         },
       };
 
-      const region = new RegionModel(regionData);
-      const validationError = region.validateSync();
+      const regionWithoutCoordinates = new RegionModel({
+        name: regionData.name,
+        user: regionData.user,
+        location: { type: "Polygon", coordinates: [] },
+      });
+
+      const validationError = regionWithoutCoordinates.validateSync();
 
       expect(validationError).to.exist;
-      expect(validationError?.errors["coordinates"]).to.exist;
+      expect(validationError?.errors["location"]).to.exist;
     });
   });
 });
