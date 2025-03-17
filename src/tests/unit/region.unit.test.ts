@@ -27,20 +27,16 @@ describe("Region Model - Unit Tests", () => {
       const userId = new mongoose.Types.ObjectId();
       const regionData = {
         name: faker.location.city(),
-        coordinates: [
-          [0, 0],
-          [1, 1],
-          [1, 0],
-          [0, 0],
-        ],
         user: userId,
         location: {
           type: "Polygon",
           coordinates: [
-            [0, 0],
-            [1, 1],
-            [1, 0],
-            [0, 0],
+            [
+              [0, 0],
+              [1, 1],
+              [1, 0],
+              [0, 0],
+            ],
           ],
         },
       };
@@ -49,7 +45,6 @@ describe("Region Model - Unit Tests", () => {
 
       try {
         const validationResult = region.validateSync();
-        console.log("Validation Result:", validationResult);
         expect(validationResult).to.be.undefined;
       } catch (error) {
         console.error("Validation Error:", error);
@@ -60,20 +55,16 @@ describe("Region Model - Unit Tests", () => {
     it("should fail validation without name", () => {
       const userId = new mongoose.Types.ObjectId();
       const regionData = {
-        coordinates: [
-          [0, 0],
-          [1, 1],
-          [1, 0],
-          [0, 0],
-        ],
         user: userId,
         location: {
           type: "Polygon",
           coordinates: [
-            [0, 0],
-            [1, 1],
-            [1, 0],
-            [0, 0],
+            [
+              [0, 0],
+              [1, 1],
+              [1, 0],
+              [0, 0],
+            ],
           ],
         },
       };
@@ -92,12 +83,7 @@ describe("Region Model - Unit Tests", () => {
         user: userId,
         location: {
           type: "Polygon",
-          coordinates: [
-            [0, 0],
-            [1, 1],
-            [1, 0],
-            [0, 0],
-          ],
+          coordinates: [],
         },
       };
 
@@ -105,7 +91,7 @@ describe("Region Model - Unit Tests", () => {
       const validationError = region.validateSync();
 
       expect(validationError).to.exist;
-      expect(validationError?.errors["coordinates"]).to.exist;
+      expect(validationError?.errors["location"]).to.exist;
     });
   });
 });
