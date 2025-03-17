@@ -33,6 +33,7 @@ const router = Router();
  * @swagger
  * /regions:
  *   post:
+ *     tags: [Region]
  *     summary: Create a new region
  *     description: Creates a new region with name and country.
  *     requestBody:
@@ -62,6 +63,7 @@ router.post("/regions", createRegion);
  * @swagger
  * /regions:
  *   get:
+ *     tags: [Region]
  *     summary: Get all regions
  *     description: Retrieves a list of all regions.
  *     responses:
@@ -87,6 +89,7 @@ router.get("/regions", getRegions);
  * @swagger
  * /regions/{id}:
  *   get:
+ *     tags: [Region]
  *     summary: Get a region by ID
  *     description: Retrieves a region by its ID.
  *     parameters:
@@ -117,6 +120,7 @@ router.get("/regions/:id", getRegionById);
  * @swagger
  * /regions/{id}:
  *   put:
+ *     tags: [Region]
  *     summary: Update a region
  *     description: Updates the details of a region by ID.
  *     parameters:
@@ -155,6 +159,7 @@ router.put("/regions/:id", updateRegion);
  * @swagger
  * /regions/{id}:
  *   delete:
+ *     tags: [Region]
  *     summary: Delete a region
  *     description: Deletes a region by ID.
  *     parameters:
@@ -173,6 +178,83 @@ router.put("/regions/:id", updateRegion);
  *         description: Internal server error
  */
 router.delete("/regions/:id", deleteRegion);
+/**
+ * @swagger
+ * /regions/point:
+ *   get:
+ *     tags: [Region]
+ *     summary: Find regions containing a specific point
+ *     description: Finds regions that contain the specified point (longitude and latitude).
+ *     parameters:
+ *       - in: query
+ *         name: longitude
+ *         required: true
+ *         description: Longitude of the point
+ *         schema:
+ *           type: number
+ *       - in: query
+ *         name: latitude
+ *         required: true
+ *         description: Latitude of the point
+ *         schema:
+ *           type: number
+ *     responses:
+ *       200:
+ *         description: List of regions containing the point
+ *         content:
+ *           application/json:
+ *             example:
+ *               - id: 1
+ *                 name: 'North Region'
+ *                 country: 'Brazil'
+ *                 location:
+ *                   type: "Polygon"
+ *                   coordinates: [[[40.7128, -74.0060], [40.7138, -74.0050], [40.7118, -74.0050], [40.7128, -74.0060]]]
+ *       400:
+ *         description: Invalid coordinates
+ *       500:
+ *         description: Internal server error
+ */
 router.get("/regions/point", findRegionsContainingPoint);
+/**
+ * @swagger
+ * /regions/near:
+ *   get:
+ *     tags: [Region]
+ *     summary: Find regions near a point
+ *     description: Finds regions within a specified distance from a point (longitude, latitude).
+ *     parameters:
+ *       - in: query
+ *         name: longitude
+ *         required: true
+ *         description: Longitude of the point
+ *         schema:
+ *           type: number
+ *       - in: query
+ *         name: latitude
+ *         required: true
+ *         description: Latitude of the point
+ *         schema:
+ *           type: number
+ *       - in: query
+ *         name: maxDistance
+ *         required: true
+ *         description: Maximum distance from the point (in meters)
+ *         schema:
+ *           type: number
+ *     responses:
+ *       200:
+ *         description: List of regions near the point
+ *         content:
+ *           application/json:
+ *             example:
+ *               - id: 1
+ *                 name: 'North Region'
+ *                 country: 'Brazil'
+ *       400:
+ *         description: Invalid parameters
+ *       500:
+ *         description: Internal server error
+ */
 router.get("/regions/near", findRegionsNearPoint);
 export default router;
