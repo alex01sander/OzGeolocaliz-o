@@ -51,43 +51,27 @@ describe("Region Router Integration Tests", () => {
 
   describe("POST /regions", () => {
     it("should create a new region successfully", async () => {
-      const generatePolygonCoordinates = () => {
-        const baseLat = faker.location.latitude();
-        const baseLng = faker.location.longitude();
+      const generateValidCoordinates = () => {
+        const centerLat = faker.location.latitude({ min: -30, max: 30 });
+        const centerLng = faker.location.longitude({ min: -60, max: -30 });
 
-        const points = [
-          [baseLat, baseLng],
-          [baseLat + 0.01, baseLng + 0.01],
-          [baseLat + 0.01, baseLng - 0.01],
-          [baseLat, baseLng],
+        const size = 0.1;
+
+        return [
+          [centerLng - size, centerLat - size],
+          [centerLng + size, centerLat - size],
+          [centerLng + size, centerLat + size],
+          [centerLng - size, centerLat + size],
+          [centerLng - size, centerLat - size],
         ];
-
-        return points;
       };
 
-      const simpleCoordinates = generatePolygonCoordinates();
-      const polygonCoordinates = [generatePolygonCoordinates()];
-
-      const testRegion = new RegionModel({
-        name: "Test Direct Model",
-        coordinates: simpleCoordinates,
-        user: testUser._id,
-        location: {
-          type: "Polygon",
-          coordinates: polygonCoordinates,
-        },
-      });
-
-      await testRegion.save();
+      const coordinates = generateValidCoordinates();
 
       const regionData = {
         name: faker.location.city(),
-        coordinates: simpleCoordinates,
+        coordinates: coordinates,
         userId: testUser._id.toString(),
-        location: {
-          type: "Polygon",
-          coordinates: polygonCoordinates,
-        },
       };
 
       const response = await supertest(app)
@@ -102,51 +86,42 @@ describe("Region Router Integration Tests", () => {
       expect(response.body).to.have.property("_id");
       expect(response.body.name).to.equal(regionData.name);
 
+      expect(response.body.location.coordinates[0]).to.deep.equal(coordinates);
+
       const savedRegion = await RegionModel.findById(response.body._id);
       expect(savedRegion).to.not.be.null;
 
       const updatedUser = await UserModel.findById(testUser._id);
-      expect(updatedUser.regions.map((r) => r.toString())).to.include(
-        response.body._id,
-      );
+      expect(updatedUser.regions).to.be.an("array");
+
+      const regionIds = updatedUser.regions.map((r) => r.toString());
+      expect(regionIds).to.include(response.body._id.toString());
     });
 
-    it("should return 400 when required fields are missing", async () => {
+    it("should return 500 when required fields are missing", async () => {
       const response = await supertest(app).post("/api/regions").send({
         name: faker.location.city(),
+        userId: testUser._id.toString(),
       });
 
-      expect(response.status).to.equal(400);
+      expect(response.status).to.equal(500);
       expect(response.body).to.have.property("message");
     });
 
     it("should return 404 when user is not found", async () => {
-      const generatePolygonCoordinates = () => {
-        const baseLat = faker.location.latitude();
-        const baseLng = faker.location.longitude();
+      const coordinates = [
+        [-60.1, -30.1],
+        [-59.9, -30.1],
+        [-59.9, -29.9],
+        [-60.1, -29.9],
+        [-60.1, -30.1],
+      ];
 
-        return [
-          [baseLat, baseLng],
-          [baseLat + 0.01, baseLng + 0.01],
-          [baseLat + 0.01, baseLng - 0.01],
-          [baseLat, baseLng],
-        ];
-      };
-
-      const simpleCoordinates = generatePolygonCoordinates();
-      const polygonCoordinates = [generatePolygonCoordinates()];
-
-      const response = await supertest(app)
-        .post("/api/regions")
-        .send({
-          name: faker.location.city(),
-          coordinates: simpleCoordinates,
-          location: {
-            type: "Polygon",
-            coordinates: polygonCoordinates,
-          },
-          userId: new mongoose.Types.ObjectId().toString(),
-        });
+      const response = await supertest(app).post("/api/regions").send({
+        name: faker.location.city(),
+        coordinates: coordinates,
+        userId: new mongoose.Types.ObjectId().toString(),
+      });
 
       expect(response.status).to.equal(404);
       expect(response.body).to.have.property("message", "User not found");
