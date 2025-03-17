@@ -25,6 +25,7 @@ class GeoLib {
    * @swagger
    * /geocode/address:
    *   get:
+   *     tags: [GeoCode]
    *     summary: Get address from coordinates
    *     description: Queries the Google Geocoding API to get the address for the provided coordinates (latitude, longitude).
    *     parameters:
@@ -85,6 +86,7 @@ class GeoLib {
    * @swagger
    * /geocode/coordinates:
    *   get:
+   *     tags: [GeoCode]
    *     summary: Get coordinates from address
    *     description: Queries the Google Geocoding API to get the coordinates (latitude, longitude) for the provided address.
    *     parameters:
