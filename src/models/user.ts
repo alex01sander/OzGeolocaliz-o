@@ -73,7 +73,13 @@ import ObjectId = mongoose.Types.ObjectId;
 @pre<User>("save", async function (next) {
   if (this.address && !this.coordinates) {
     try {
-      const [lat, lng] = await lib.getCoordinatesFromAddress(this.address);
+      const coords = await lib.getCoordinatesFromAddress(this.address);
+
+      if (!coords) {
+        return next(new Error("Coordinates not found for the address."));
+      }
+
+      const [lat, lng] = coords;
       this.coordinates = [lat, lng];
     } catch (error) {
       return next(new Error(`Failed to get coordinates: ${error.message}`));
@@ -88,7 +94,13 @@ import ObjectId = mongoose.Types.ObjectId;
         return next(new Error("Invalid coordinates."));
       }
 
-      this.address = await lib.getAddressFromCoordinates(this.coordinates);
+      const address = await lib.getAddressFromCoordinates(this.coordinates);
+
+      if (!address) {
+        return next(new Error("Address not found for coordinates."));
+      }
+
+      this.address = address;
     } catch (error) {
       return next(new Error(`Failed to get address: ${error.message}`));
     }
