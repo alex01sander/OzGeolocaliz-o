@@ -1,59 +1,135 @@
 import * as sinon from "sinon";
 import { expect } from "chai";
-import supertest from "supertest";
-import express from "express";
-import bodyParser from "body-parser";
-import { faker } from "@faker-js/faker";
-import mongoose from "mongoose";
+import { Request, Response } from "express";
+import { StatusCodes } from "http-status-codes";
+import * as userController from "../../controllers/userController";
+import userService from "../../services/userService";
 
-import { createUser } from "../../controllers/userController";
-import { UserModel } from "../../models/user";
-
-describe("User Creation Controller - Unit Tests", () => {
-  let app: express.Application;
+describe("User Controller - Unit Tests", () => {
   let sandbox: sinon.SinonSandbox;
+  let req: Partial<Request>;
+  let res: Partial<Response>;
 
-  before(() => {
-    app = express();
-    app.use(bodyParser.json());
-    app.post("/users", createUser);
-  });
+  const sampleUser = {
+    _id: "60d0fe4f5311236168a109ca",
+    name: "John Doe",
+    email: "john.doe@example.com",
+  } as any;
 
   beforeEach(() => {
     sandbox = sinon.createSandbox();
+
+    res = {
+      status: sandbox.stub().returnsThis(),
+      json: sandbox.stub(),
+    };
+    req = {};
   });
 
   afterEach(() => {
     sandbox.restore();
   });
 
-  describe("Input Validation", () => {
-    it("should reject request with both address and coordinates", async () => {
-      const userData = {
-        name: faker.name.fullName(),
-        email: faker.internet.email(),
-        address: faker.address.streetAddress(),
-        coordinates: [faker.address.longitude(), faker.address.latitude()],
-      };
+  describe("createUser", () => {
+    it("should create a user successfully", async () => {
+      req.body = { name: "John Doe", email: "john@example.com" };
+      sandbox.stub(userService, "createUser").resolves(sampleUser);
 
-      const response = await supertest(app).post("/users").send(userData);
+      await userController.createUser(req as Request, res as Response);
 
-      expect(response.status).to.equal(400);
-      expect(response.body.message).to.equal(
-        "You must provide either address or coordinates, not both.",
+      expect((res.status as sinon.SinonStub).firstCall.args[0]).to.equal(
+        StatusCodes.CREATED,
+      );
+      expect((res.json as sinon.SinonStub).firstCall.args[0]).to.equal(
+        sampleUser,
       );
     });
 
-    it("should reject request without address or coordinates", async () => {
-      const userData = {
-        name: faker.name.fullName(),
-        email: faker.internet.email(),
-      };
+    it("should handle errors", async () => {
+      req.body = { name: "John Doe", email: "john@example.com" };
+      sandbox
+        .stub(userService, "createUser")
+        .rejects(new Error("Database error"));
 
-      const response = await supertest(app).post("/users").send(userData);
+      await userController.createUser(req as Request, res as Response);
 
-      expect(response.status).to.equal(400);
-      expect(response.body.message).to.equal("Provide address or coordinates.");
+      expect((res.status as sinon.SinonStub).firstCall.args[0]).to.equal(
+        StatusCodes.INTERNAL_SERVER_ERROR,
+      );
+    });
+  });
+
+  describe("getUsers", () => {
+    it("should get users with pagination", async () => {
+      req.query = { page: "1", limit: "10" };
+      sandbox.stub(userService, "getUsers").resolves({
+        users: [sampleUser],
+        totalPages: 1,
+        total: 1,
+      });
+
+      await userController.getUsers(req as Request, res as Response);
+
+      expect((res.status as sinon.SinonStub).firstCall.args[0]).to.equal(
+        StatusCodes.OK,
+      );
+      expect(
+        (res.json as sinon.SinonStub).firstCall.args[0].users,
+      ).to.deep.equal([sampleUser]);
+    });
+  });
+
+  describe("getUserById", () => {
+    it("should get a user by ID", async () => {
+      req.params = { id: sampleUser._id };
+      sandbox.stub(userService, "getUserById").resolves(sampleUser);
+
+      await userController.getUserById(req as Request, res as Response);
+
+      expect((res.status as sinon.SinonStub).firstCall.args[0]).to.equal(
+        StatusCodes.OK,
+      );
+      expect((res.json as sinon.SinonStub).firstCall.args[0]).to.equal(
+        sampleUser,
+      );
+    });
+
+    it("should return 404 when user not found", async () => {
+      req.params = { id: "nonexistent" };
+      sandbox.stub(userService, "getUserById").resolves(null);
+
+      await userController.getUserById(req as Request, res as Response);
+
+      expect((res.status as sinon.SinonStub).firstCall.args[0]).to.equal(
+        StatusCodes.NOT_FOUND,
+      );
+    });
+  });
+
+  describe("updateUser", () => {
+    it("should update a user", async () => {
+      req.params = { id: sampleUser._id };
+      req.body = { name: "Updated Name" };
+      sandbox.stub(userService, "updateUser").resolves(sampleUser);
+
+      await userController.updateUser(req as Request, res as Response);
+
+      expect((res.status as sinon.SinonStub).firstCall.args[0]).to.equal(
+        StatusCodes.OK,
+      );
+    });
+  });
+
+  describe("deleteUser", () => {
+    it("should delete a user", async () => {
+      req.params = { id: sampleUser._id };
+      sandbox.stub(userService, "deleteUser").resolves(sampleUser);
+
+      await userController.deleteUser(req as Request, res as Response);
+
+      expect((res.status as sinon.SinonStub).firstCall.args[0]).to.equal(
+        StatusCodes.OK,
+      );
     });
   });
 });
