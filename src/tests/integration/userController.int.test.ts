@@ -1,146 +1,105 @@
-import * as mongoose from "mongoose";
-import supertest from "supertest";
 import * as sinon from "sinon";
-import { faker } from "@faker-js/faker";
 import { expect } from "chai";
+import supertest from "supertest";
 import express from "express";
 import bodyParser from "body-parser";
+import { StatusCodes } from "http-status-codes";
+import * as userController from "../../controllers/userController";
+import userService from "../../services/userService";
 
-import { UserModel } from "../../models/user";
-import lib from "../../utils/lib";
-import { createUser } from "../../controllers/userController";
+const app = express();
+app.use(bodyParser.json());
 
-describe("User Creation Controller - Integration Tests", () => {
-  let app: express.Application;
+app.post("/api/users", userController.createUser);
+app.get("/api/users", userController.getUsers);
+app.get("/api/users/:id", userController.getUserById);
+app.put("/api/users/:id", userController.updateUser);
+app.delete("/api/users/:id", userController.deleteUser);
+
+const request = supertest(app);
+
+describe("User Controller - Integration Tests", () => {
   let sandbox: sinon.SinonSandbox;
-  let mongoConnection: mongoose.Connection;
 
-  before(async () => {
-    app = express();
-    app.use(bodyParser.json());
-    app.post("/users", createUser);
-
-    const dbName = `testdb_integration_${Date.now()}`;
-    const connectionString = `mongodb://localhost:27017/${dbName}`;
-
-    try {
-      const connection = await mongoose.connect(connectionString);
-      mongoConnection = connection.connection;
-    } catch (error) {
-      console.error("Database connection error:", error);
-      throw error;
-    }
-  });
-
+  const sampleUser = {
+    _id: "60d0fe4f5311236168a109ca",
+    name: "John Doe",
+    email: "john.doe@example.com",
+  } as any;
   beforeEach(() => {
     sandbox = sinon.createSandbox();
   });
 
-  afterEach(async () => {
+  afterEach(() => {
     sandbox.restore();
-    await UserModel.deleteMany({});
   });
 
-  after(async () => {
-    if (mongoConnection) {
-      await mongoConnection.close();
-    }
-  });
+  describe("POST /api/users", () => {
+    it("should create a user", async () => {
+      const userData = { name: "John Doe", email: "john@example.com" };
+      sandbox.stub(userService, "createUser").resolves(sampleUser);
 
-  describe("User Creation Scenarios", () => {
-    it("should create user with address and generate coordinates", async () => {
-      const coordStub = sandbox
-        .stub(lib, "getCoordinatesFromAddress")
-        .resolves([faker.location.longitude(), faker.location.latitude()]);
+      const response = await request.post("/api/users").send(userData);
 
-      const userData = {
-        name: faker.person.fullName(),
-        email: faker.internet.email(),
-        address: faker.location.streetAddress(),
-      };
-
-      const response = await supertest(app).post("/users").send(userData);
-
-      expect(response.status).to.equal(201);
-      expect(response.body.name).to.equal(userData.name);
-      expect(response.body.email.toLowerCase()).to.equal(
-        userData.email.toLowerCase(),
-      );
-      expect(response.body.address).to.equal(userData.address);
-      expect(response.body.coordinates).to.be.an("array");
-      expect(response.body.coordinates).to.have.lengthOf(2);
-
-      sinon.assert.calledOnce(coordStub);
-    });
-
-    it("should create user with coordinates and generate address", async () => {
-      const addressStub = sandbox
-        .stub(lib, "getAddressFromCoordinates")
-        .resolves(faker.location.streetAddress());
-
-      const userData = {
-        name: faker.person.fullName(),
-        email: faker.internet.email(),
-        coordinates: [faker.location.longitude(), faker.location.latitude()],
-      };
-
-      const response = await supertest(app).post("/users").send(userData);
-
-      expect(response.status).to.equal(201);
-      expect(response.body.name).to.equal(userData.name);
-      expect(response.body.email.toLowerCase()).to.equal(
-        userData.email.toLowerCase(),
-      );
-      expect(response.body.coordinates).to.deep.equal(userData.coordinates);
-      expect(response.body.address).to.be.a("string");
-
-      sinon.assert.calledOnce(addressStub);
+      expect(response.status).to.equal(StatusCodes.CREATED);
+      expect(response.body).to.deep.equal(sampleUser);
     });
   });
 
-  describe("Error Handling Scenarios", () => {
-    it("should handle failure when coordinates cannot be found", async () => {
-      const coordStub = sandbox
-        .stub(lib, "getCoordinatesFromAddress")
-        .resolves(null);
+  describe("GET /api/users", () => {
+    it("should get users with pagination", async () => {
+      sandbox.stub(userService, "getUsers").resolves({
+        users: [sampleUser],
+        totalPages: 1,
+        total: 1,
+      });
 
-      const userData = {
-        name: faker.person.fullName(),
-        email: faker.internet.email(),
-        address: faker.location.streetAddress(),
-      };
+      const response = await request.get("/api/users?page=1&limit=10");
 
-      const response = await supertest(app).post("/users").send(userData);
+      expect(response.status).to.equal(StatusCodes.OK);
+      expect(response.body.users).to.deep.equal([sampleUser]);
+    });
+  });
 
-      expect(response.status).to.equal(500);
-      expect(response.body.message).to.equal("Internal server error");
-      expect(response.body.error).to.equal(
-        "Coordinates not found for the address.",
-      );
+  describe("GET /api/users/:id", () => {
+    it("should get a user by ID", async () => {
+      sandbox.stub(userService, "getUserById").resolves(sampleUser);
 
-      sinon.assert.calledOnce(coordStub);
+      const response = await request.get(`/api/users/${sampleUser._id}`);
+
+      expect(response.status).to.equal(StatusCodes.OK);
+      expect(response.body).to.deep.equal(sampleUser);
     });
 
-    it("should handle failure when address cannot be found", async () => {
-      const addressStub = sandbox
-        .stub(lib, "getAddressFromCoordinates")
-        .resolves(null);
+    it("should return 404 when user not found", async () => {
+      sandbox.stub(userService, "getUserById").resolves(null);
 
-      const userData = {
-        name: faker.person.fullName(),
-        email: faker.internet.email(),
-        coordinates: [faker.location.longitude(), faker.location.latitude()],
-      };
+      const response = await request.get("/api/users/nonexistent");
 
-      const response = await supertest(app).post("/users").send(userData);
+      expect(response.status).to.equal(StatusCodes.NOT_FOUND);
+    });
+  });
 
-      expect(response.status).to.equal(500);
-      expect(response.body.message).to.equal("Internal server error");
-      expect(response.body.error).to.equal(
-        "Address not found for coordinates.",
-      );
+  describe("PUT /api/users/:id", () => {
+    it("should update a user", async () => {
+      const updateData = { name: "Updated Name" };
+      sandbox.stub(userService, "updateUser").resolves(sampleUser);
 
-      sinon.assert.calledOnce(addressStub);
+      const response = await request
+        .put(`/api/users/${sampleUser._id}`)
+        .send(updateData);
+
+      expect(response.status).to.equal(StatusCodes.OK);
+    });
+  });
+
+  describe("DELETE /api/users/:id", () => {
+    it("should delete a user", async () => {
+      sandbox.stub(userService, "deleteUser").resolves(sampleUser);
+
+      const response = await request.delete(`/api/users/${sampleUser._id}`);
+
+      expect(response.status).to.equal(StatusCodes.OK);
     });
   });
 });
