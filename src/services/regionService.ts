@@ -9,6 +9,10 @@ export class RegionService {
     coordinates: Coordinate[],
     userId: string,
   ) {
+    if (!coordinates || !Array.isArray(coordinates)) {
+      throw new Error("Coordinates are required and must be an array");
+    }
+
     if (
       coordinates.length < 4 ||
       coordinates[0][0] !== coordinates[coordinates.length - 1][0] ||
