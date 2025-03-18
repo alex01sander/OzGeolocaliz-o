@@ -5,6 +5,13 @@ import { StatusCodes } from "http-status-codes";
 export const createRegion = async (req: Request, res: Response) => {
   try {
     const { name, coordinates, userId } = req.body;
+
+    if (!name || !coordinates || !userId) {
+      return res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .json({ message: "Missing required fields" });
+    }
+
     const region = await RegionService.createRegion(name, coordinates, userId);
     return res.status(StatusCodes.CREATED).json(region);
   } catch (error) {
@@ -68,9 +75,7 @@ export const deleteRegion = async (req: Request, res: Response) => {
       .json({ message: "Region successfully deleted" });
   } catch (error) {
     console.error(`Error deleting region - ID: ${id}`, error);
-    return res
-      .status(StatusCodes.NOT_ACCEPTABLE)
-      .json({ message: error.message });
+    return res.status(StatusCodes.NOT_FOUND).json({ message: error.message });
   }
 };
 
