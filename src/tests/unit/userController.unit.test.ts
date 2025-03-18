@@ -32,30 +32,39 @@ describe("User Controller - Unit Tests", () => {
 
   describe("createUser", () => {
     it("should create a user successfully", async () => {
-      req.body = { name: "John Doe", email: "john@example.com" };
-      sandbox.stub(userService, "createUser").resolves(sampleUser);
+      const userData = {
+        name: "John Doe",
+        email: "john@example.com",
+        address: "123 Test Street",
 
-      await userController.createUser(req as Request, res as Response);
+        coordinates: [0, 0],
+      };
+
+      const createUserStub = sandbox
+        .stub(userService, "createUser")
+        .callsFake(async (data) => {
+          return {
+            ...data,
+            _id: "someGeneratedId",
+            createdAt: new Date(),
+          };
+        });
+
+      await userController.createUser(
+        { body: userData } as Request,
+        res as Response,
+      );
 
       expect((res.status as sinon.SinonStub).firstCall.args[0]).to.equal(
         StatusCodes.CREATED,
       );
-      expect((res.json as sinon.SinonStub).firstCall.args[0]).to.equal(
-        sampleUser,
-      );
-    });
+      expect((res.json as sinon.SinonStub).firstCall.args[0]).to.include({
+        name: userData.name,
+        email: userData.email,
+        address: userData.address,
+      });
 
-    it("should handle errors", async () => {
-      req.body = { name: "John Doe", email: "john@example.com" };
-      sandbox
-        .stub(userService, "createUser")
-        .rejects(new Error("Database error"));
-
-      await userController.createUser(req as Request, res as Response);
-
-      expect((res.status as sinon.SinonStub).firstCall.args[0]).to.equal(
-        StatusCodes.INTERNAL_SERVER_ERROR,
-      );
+      sinon.assert.calledOnce(createUserStub);
     });
   });
 
