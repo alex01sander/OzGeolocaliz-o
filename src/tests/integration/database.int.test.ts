@@ -31,13 +31,8 @@ describe("MongoDB Connection Integration Tests", () => {
     const env = { MONGO_URI: mongoUri };
 
     const init = async function () {
-      try {
-        await mongoose.connect(env.MONGO_URI);
-        console.log("MongoDB connected successfully");
-      } catch (error) {
-        console.log("MongoDB connection failed", error);
-        process.exit(1);
-      }
+      await mongoose.connect(env.MONGO_URI);
+      console.log("MongoDB connected successfully");
     };
 
     await init();
@@ -47,10 +42,8 @@ describe("MongoDB Connection Integration Tests", () => {
 
     expect(consoleLogSpy.calledWith("MongoDB connected successfully")).to.be
       .true;
-
     expect(processExitStub.called).to.be.false;
   });
-
   it("should fail when trying to connect with invalid credentials", async () => {
     const connectionError = new Error("Authentication failed");
     connectStub.rejects(connectionError);
