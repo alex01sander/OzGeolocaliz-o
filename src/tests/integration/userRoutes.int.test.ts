@@ -8,6 +8,7 @@ import { UserModel } from "../../models/user";
 import { faker } from "@faker-js/faker";
 import userRouter from "../../routes/userRoutes";
 import lib from "../../utils/lib";
+import { STATUS_CODES } from "http";
 
 describe("User Routes - Integration Tests", () => {
   let app: express.Application;
@@ -58,7 +59,7 @@ describe("User Routes - Integration Tests", () => {
         .get("/api/users")
         .query({ page: 1, limit: 10 });
 
-      expect(response.status).to.equal(200);
+      expect(response.status).to.equal(STATUS_CODES.OK);
       expect(response.body).to.have.property("users");
       expect(response.body.users).to.be.an("array");
       expect(response.body.users.length).to.equal(3);

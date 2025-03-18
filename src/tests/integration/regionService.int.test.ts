@@ -15,6 +15,7 @@ import {
   updateRegion,
   deleteRegion,
 } from "../../controllers/regionController";
+import { STATUS_CODES } from "http";
 
 function generateValidCoordinates() {
   const centerLat = faker.location.latitude({ min: -30, max: 30 });
@@ -90,7 +91,7 @@ describe("Region Controller - Integration Tests", () => {
 
       const response = await supertest(app).post("/regions").send(regionData);
 
-      expect(response.status).to.equal(201);
+      expect(response.status).to.equal(STATUS_CODES.CREATED);
       expect(response.body.name).to.equal(regionData.name);
       expect(response.body.location.coordinates[0]).to.deep.equal(coordinates);
 
@@ -110,7 +111,7 @@ describe("Region Controller - Integration Tests", () => {
       };
 
       const response = await supertest(app).post("/regions").send(regionData);
-      expect(response.status).to.equal(404);
+      expect(response.status).to.equal(STATUS_CODES.NOT_FOUND);
       expect(response.body.message).to.equal("User not found");
     });
 
@@ -126,7 +127,7 @@ describe("Region Controller - Integration Tests", () => {
       };
 
       const response = await supertest(app).post("/regions").send(regionData);
-      expect(response.status).to.equal(400);
+      expect(response.status).to.equal(STATUS_CODES.BAD_REQUEST);
       expect(response.body.message).to.include(
         "Coordinates must form a valid, closed GeoJSON Polygon",
       );
@@ -148,7 +149,7 @@ describe("Region Controller - Integration Tests", () => {
 
       const response = await supertest(app).get("/regions");
 
-      expect(response.status).to.equal(200);
+      expect(response.status).to.equal(STATUS_CODES.OK);
       expect(response.body).to.be.an("array");
       expect(response.body.length).to.be.at.least(1);
     });
@@ -169,7 +170,7 @@ describe("Region Controller - Integration Tests", () => {
 
       const response = await supertest(app).get(`/regions/${region._id}`);
 
-      expect(response.status).to.equal(200);
+      expect(response.status).to.equal(STATUS_CODES.OK);
       expect(response.body.name).to.equal(regionData.name);
       expect(response.body.location.coordinates[0]).to.deep.equal(coordinates);
     });
@@ -178,7 +179,7 @@ describe("Region Controller - Integration Tests", () => {
       const nonExistentId = new mongoose.Types.ObjectId();
       const response = await supertest(app).get(`/regions/${nonExistentId}`);
 
-      expect(response.status).to.equal(404);
+      expect(response.status).to.equal(STATUS_CODES.NOT_FOUND);
       expect(response.body.message).to.equal("Region not found");
     });
   });
@@ -209,7 +210,7 @@ describe("Region Controller - Integration Tests", () => {
         .put(`/regions/${region._id}`)
         .send(updateData);
 
-      expect(response.status).to.equal(200);
+      expect(response.status).to.equal(STATUS_CODES.OK);
       expect(response.body.name).to.equal(updateData.name);
       expect(response.body.location.coordinates[0]).to.deep.equal(
         updatedCoordinates,
@@ -229,7 +230,7 @@ describe("Region Controller - Integration Tests", () => {
       await region.save();
 
       const response = await supertest(app).delete(`/regions/${region._id}`);
-      expect(response.status).to.equal(200);
+      expect(response.status).to.equal(STATUS_CODES.OK);
 
       const deletedRegion = await RegionModel.findById(region._id);
       expect(deletedRegion).to.be.null;
@@ -246,7 +247,7 @@ describe("Region Controller - Integration Tests", () => {
         .put(`/regions/${nonExistentId}`)
         .send(updateData);
 
-      expect(response.status).to.equal(404);
+      expect(response.status).to.equal(STATUS_CODES.NOT_FOUND);
       expect(response.body.message).to.equal("Region not found");
     });
   });

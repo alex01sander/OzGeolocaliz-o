@@ -8,6 +8,7 @@ import { faker } from "@faker-js/faker";
 import { UserModel } from "../../models/user";
 import userRouter from "../../routes/userRoutes";
 import lib from "../../utils/lib";
+import { STATUS_CODES } from "http";
 
 describe("User Routes - Unit Tests", () => {
   let app: express.Application;
@@ -51,7 +52,7 @@ describe("User Routes - Unit Tests", () => {
         .get("/api/users")
         .query({ page: 1, limit: 10 });
 
-      expect(response.status).to.equal(200);
+      expect(response.status).to.equal(STATUS_CODES.OK);
 
       const responseBody = response.body;
       const usersArray =
@@ -74,7 +75,7 @@ describe("User Routes - Unit Tests", () => {
 
       const response = await supertest(app).get(`/api/users/${mockUser._id}`);
 
-      expect(response.status).to.equal(200);
+      expect(response.status).to.equal(STATUS_CODES.OK);
       expect(response.body).to.have.property("_id", mockUser._id.toString());
       expect(response.body).to.have.property("name", mockUser.name);
       expect(response.body).to.have.property("email", mockUser.email);
@@ -87,7 +88,7 @@ describe("User Routes - Unit Tests", () => {
 
       const response = await supertest(app).get(`/api/users/${nonExistentId}`);
 
-      expect(response.status).to.equal(404);
+      expect(response.status).to.equal(STATUS_CODES.NOT_FOUND);
       expect(response.body).to.have.property("message", "User not found");
     });
   });
@@ -123,7 +124,7 @@ describe("User Routes - Unit Tests", () => {
       console.log("Response Body:", response.body);
       console.log("Error:", response.error);
 
-      expect(response.status).to.equal(200);
+      expect(response.status).to.equal(STATUS_CODES.OK);
       expect(response.body.name).to.equal(newName);
 
       findByIdStub.restore();

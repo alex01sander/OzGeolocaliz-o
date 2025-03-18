@@ -7,6 +7,7 @@ import mongoose from "mongoose";
 
 import * as regionController from "../../controllers/regionController";
 import { RegionService } from "../../services/regionService";
+import { STATUS_CODES } from "http";
 
 const app = express();
 app.use(bodyParser.json());
@@ -70,14 +71,14 @@ describe("Region Controller Tests", () => {
         coordinates: sampleRegion.coordinates,
         userId: sampleRegion.userId,
       });
-      expect(response.status).to.equal(201);
+      expect(response.status).to.equal(STATUS_CODES.CREATED);
       expect(response.body).to.deep.equal(sampleRegion);
     });
 
     it("should return all regions", async () => {
       sandbox.stub(RegionService, "getRegions").resolves([sampleRegion]);
       const response = await request.get("/api/regions");
-      expect(response.status).to.equal(200);
+      expect(response.status).to.equal(STATUS_CODES.OK);
       expect(response.body).to.be.an("array").with.lengthOf(1);
       expect(response.body[0]).to.deep.equal(sampleRegion);
     });
@@ -85,7 +86,7 @@ describe("Region Controller Tests", () => {
     it("should retrieve a region by ID", async () => {
       sandbox.stub(RegionService, "getRegionById").resolves(sampleRegion);
       const response = await request.get(`/api/regions/${sampleRegion._id}`);
-      expect(response.status).to.equal(200);
+      expect(response.status).to.equal(STATUS_CODES.OK);
       expect(response.body).to.deep.equal(sampleRegion);
     });
 
@@ -98,14 +99,14 @@ describe("Region Controller Tests", () => {
           name: "Updated Region",
           coordinates: sampleRegion.coordinates,
         });
-      expect(response.status).to.equal(200);
+      expect(response.status).to.equal(STATUS_CODES.OK);
       expect(response.body.name).to.equal("Updated Region");
     });
 
     it("should delete a region", async () => {
       sandbox.stub(RegionService, "deleteRegion").resolves();
       const response = await request.delete(`/api/regions/${sampleRegion._id}`);
-      expect(response.status).to.equal(200);
+      expect(response.status).to.equal(STATUS_CODES.OK);
       expect(response.body.message).to.equal("Region successfully deleted");
     });
 
@@ -116,7 +117,7 @@ describe("Region Controller Tests", () => {
       const response = await request.get(
         `/api/regions/point/contains?longitude=${samplePoint.longitude}&latitude=${samplePoint.latitude}`,
       );
-      expect(response.status).to.equal(200);
+      expect(response.status).to.equal(STATUS_CODES.OK);
       expect(response.body).to.be.an("array").with.lengthOf(1);
       expect(response.body[0]).to.deep.equal(sampleRegion);
     });
@@ -128,7 +129,7 @@ describe("Region Controller Tests", () => {
       const response = await request.get(
         `/api/regions/point/near?longitude=${samplePoint.longitude}&latitude=${samplePoint.latitude}&maxDistance=${samplePoint.maxDistance}`,
       );
-      expect(response.status).to.equal(200);
+      expect(response.status).to.equal(STATUS_CODES.OK);
       expect(response.body).to.be.an("array").with.lengthOf(1);
       expect(response.body[0]).to.deep.equal(sampleRegion);
     });
@@ -138,7 +139,7 @@ describe("Region Controller Tests", () => {
         .stub(RegionService, "getRegionById")
         .rejects(new Error("Region not found"));
       const response = await request.get(`/api/regions/nonexistent-id`);
-      expect(response.status).to.equal(404);
+      expect(response.status).to.equal(STATUS_CODES.NOT_FOUND);
       expect(response.body.message).to.equal("Region not found");
     });
 
@@ -151,13 +152,13 @@ describe("Region Controller Tests", () => {
         coordinates: "invalid-format",
         userId: sampleRegion.userId,
       });
-      expect(response.status).to.equal(400);
+      expect(response.status).to.equal(STATUS_CODES.BAD_REQUEST);
       expect(response.body.message).to.equal("Invalid coordinates");
     });
 
     it("should handle missing parameters in queries", async () => {
       const response = await request.get("/api/regions/point/contains");
-      expect(response.status).to.equal(400);
+      expect(response.status).to.equal(STATUS_CODES.BAD_REQUEST);
       expect(response.body.message).to.equal(
         "Longitude and latitude are required",
       );

@@ -8,6 +8,7 @@ import { RegionModel } from "../../models/region";
 import { faker } from "@faker-js/faker";
 import regionRouter from "../../routes/regionRoutes";
 import lib from "../../utils/lib";
+import { STATUS_CODES } from "http";
 
 describe("Region Router Integration Tests", () => {
   let testUser: any;
@@ -82,7 +83,7 @@ describe("Region Router Integration Tests", () => {
         console.log("Resposta da API:", response.status, response.body);
       }
 
-      expect(response.status).to.equal(201);
+      expect(response.status).to.equal(STATUS_CODES.CREATED);
       expect(response.body).to.have.property("_id");
       expect(response.body.name).to.equal(regionData.name);
 
@@ -104,7 +105,7 @@ describe("Region Router Integration Tests", () => {
         userId: testUser._id.toString(),
       });
 
-      expect(response.status).to.equal(500);
+      expect(response.status).to.equal(STATUS_CODES.INTERNAL_SERVER_ERROR);
       expect(response.body).to.have.property("message");
     });
 
@@ -123,7 +124,7 @@ describe("Region Router Integration Tests", () => {
         userId: new mongoose.Types.ObjectId().toString(),
       });
 
-      expect(response.status).to.equal(404);
+      expect(response.status).to.equal(STATUS_CODES.NOT_FOUND);
       expect(response.body).to.have.property("message", "User not found");
     });
   });

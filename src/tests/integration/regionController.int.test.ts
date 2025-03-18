@@ -5,6 +5,7 @@ import express from "express";
 import bodyParser from "body-parser";
 import * as regionController from "../../controllers/regionController";
 import { RegionService } from "../../services/regionService";
+import { STATUS_CODES } from "http";
 
 const app = express();
 app.use(bodyParser.json());
@@ -77,7 +78,7 @@ describe("Region Controller - Integration Tests", () => {
 
       const response = await request.post("/api/regions").send(newRegion);
 
-      expect(response.status).to.equal(201);
+      expect(response.status).to.equal(STATUS_CODES.CREATED);
       expect(response.body).to.have.property("_id");
       expect(response.body.name).to.equal(newRegion.name);
     });
@@ -87,7 +88,7 @@ describe("Region Controller - Integration Tests", () => {
 
       const response = await request.get("/api/regions");
 
-      expect(response.status).to.equal(200);
+      expect(response.status).to.equal(STATUS_CODES.OK);
       expect(response.body).to.be.an("array");
       expect(response.body.length).to.equal(1);
       expect(response.body[0]._id).to.equal(testRegionId);
@@ -98,7 +99,7 @@ describe("Region Controller - Integration Tests", () => {
 
       const response = await request.get(`/api/regions/${testRegionId}`);
 
-      expect(response.status).to.equal(200);
+      expect(response.status).to.equal(STATUS_CODES.OK);
       expect(response.body._id).to.equal(testRegionId);
       expect(response.body.name).to.equal(sampleRegion.name);
     });
@@ -120,7 +121,7 @@ describe("Region Controller - Integration Tests", () => {
         .put(`/api/regions/${testRegionId}`)
         .send(updatedData);
 
-      expect(response.status).to.equal(200);
+      expect(response.status).to.equal(STATUS_CODES.OK);
       expect(response.body._id).to.equal(testRegionId);
       expect(response.body.name).to.equal(updatedData.name);
     });
@@ -130,7 +131,7 @@ describe("Region Controller - Integration Tests", () => {
 
       const response = await request.delete(`/api/regions/${testRegionId}`);
 
-      expect(response.status).to.equal(200);
+      expect(response.status).to.equal(STATUS_CODES.OK);
       expect(response.body.message).to.equal("Region successfully deleted");
     });
   });
