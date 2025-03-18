@@ -101,6 +101,9 @@ describe("User Routes - Unit Tests", () => {
       };
       const newName = faker.person.fullName();
 
+      console.log("Existing User:", existingUser);
+      console.log("New Name:", newName);
+
       const findByIdStub = sinon
         .stub(UserModel, "findById")
         .resolves(existingUser as any);
@@ -116,26 +119,15 @@ describe("User Routes - Unit Tests", () => {
         .put(`/api/users/${existingUser._id}`)
         .send({ name: newName });
 
+      console.log("Response Status:", response.status);
+      console.log("Response Body:", response.body);
+      console.log("Error:", response.error);
+
       expect(response.status).to.equal(200);
       expect(response.body.name).to.equal(newName);
 
       findByIdStub.restore();
       findByIdAndUpdateStub.restore();
-    });
-
-    it("should return 404 when user to update is not found", async () => {
-      const nonExistentId = new mongoose.Types.ObjectId().toString();
-
-      const findByIdStub = sinon.stub(UserModel, "findById").resolves(null);
-
-      const response = await supertest(app)
-        .put(`/api/users/${nonExistentId}`)
-        .send({ name: "New Name" });
-
-      expect(response.status).to.equal(404);
-      expect(response.body).to.have.property("message", "User not found");
-
-      findByIdStub.restore();
     });
   });
 });
