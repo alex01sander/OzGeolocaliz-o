@@ -1,85 +1,108 @@
-# OZmap Challenge: Construindo a Geolocalização do Futuro
+# Ozmap API
 
-Olá desenvolvedor(a)! Bem-vindo(a) ao Desafio Técnico do OZmap. Este é um projeto que simula um cenário real de nossa empresa, onde você irá desempenhar um papel crucial ao desenvolver uma API RESTful robusta para gerenciar usuários e localizações. Estamos muito animados para ver sua abordagem e solução!
+## Descrição
 
-## 🌍 **Visão Geral**
+A **Ozmap API** é uma aplicação backend desenvolvida com **Node.js**, **TypeScript** e **MongoDB**. Ela oferece funcionalidades para gerenciamento de usuários e regiões, além de serviços de geocodificação usando a API do Google Maps. A API é documentada com **Swagger**, oferecendo uma interface interativa para testar os endpoints.
 
-Em um mundo conectado e globalizado, a geolocalização se torna cada vez mais essencial. E aqui no OZmap, buscamos sempre otimizar e melhorar nossos sistemas. Assim, você encontrará um protótipo que precisa de sua experiência para ser corrigido, melhorado e levado ao próximo nível.
+## Tecnologias
 
-## 🛠 **Especificações Técnicas**
+- **Node.js** e **TypeScript** para desenvolvimento backend.
+- **Express.js** para criação da API RESTful.
+- **MongoDB** como banco de dados NoSQL.
+- **Swagger** para documentação interativa da API.
+- **Mocha** e **Chai** para testes automatizados.
+- **Docker** para containerização do ambiente de desenvolvimento.
 
-- **Node.js**: Versão 20 ou superior.
-- **Banco de Dados**: Mongo 7+.
-- **ORM**: Mongoose / Typegoose.
-- **Linguagem**: Typescript.
-- **Formatação e Linting**: Eslint + prettier.
-- **Comunicação com MongoDB**: Deve ser feita via container.
+## Pré-requisitos
 
-## 🔍 **Funcionalidades Esperadas**
+Antes de executar a aplicação, instale as seguintes ferramentas:
 
-### Usuários
+- [Node.js](https://nodejs.org/)
+- [Docker](https://www.docker.com/)
+- [Yarn](https://yarnpkg.com/) (opcional, caso prefira ao npm)
 
-- **CRUD** completo para usuários.
-- Cada usuário deve ter nome, email, endereço e coordenadas.
-- Na criação, o usuário pode fornecer endereço ou coordenadas. Haverá erro caso forneça ambos ou nenhum.
-- Uso de serviço de geolocalização para resolver endereço ↔ coordenadas.
-- Atualização de endereço ou coordenadas deve seguir a mesma lógica.
+Crie um arquivo `.env` na raiz do projeto com as seguintes variáveis:
 
-### Regiões
+```env
+MONGO_URI=mongodb://usuario:senha@localhost:27017/meubanco
+PORT=3000
+GOOGLE_API_KEY=sua_api_key
+```
 
-- **CRUD** completo para regiões.
-- Uma região é definida como um polígono em GeoJSON, um formato padrão para representar formas geográficas. Cada região tem um nome, um conjunto de coordenadas que formam o polígono, e um usuário que será o dono da região.
-- Listar regiões contendo um ponto específico.
-- Listar regiões a uma certa distância de um ponto, com opção de filtrar regiões não pertencentes ao usuário que fez a requisição.
-- Exemplo de um polígono simples em GeoJSON:
-  ```json
-  {
-    "type": "Polygon",
-    "coordinates": [
-      [
-        [longitude1, latitude1],
-        [longitude2, latitude2],
-        [longitude3, latitude3],
-        [longitude1, latitude1] // Fecha o polígono
-      ]
-    ]
-  }
-  ```
+## Instalação
 
-### Testes
+Clone o repositório:
 
-- Unitários e de integração.
+```env
+git clone https://github.com/seu-usuario/ozmap-api.git
+cd ozmap-api
+```
 
-## 🌟 **Diferenciais**
+Instale as dependências:
 
-- Autenticação não é requisito, podendo então o usuário ser fornecido junto do corpo da requisição. Caso implemente autenticação, o usuário deve ser obtido a partir do token.
-- Interface básica de usuário.
-- Documentação completa da API.
-- Internacionalização.
-- Cobertura de código.
-- Utilização de mongo session
+Se usar Yarn:
 
-## ⚖ **Critérios de Avaliação**
+```env
+yarn install
+```
 
-1. Organização e clareza do código.
-2. Estruturação do projeto.
-3. Qualidade e eficiência do código.
-4. Cobertura e qualidade de testes.
-5. Pontos diferenciais citados acima.
-6. Tempo de entrega (será considerado apenas o cumprimento do prazo, sem distinção entre entregas feitas no primeiro ou no último dia, com ênfase na qualidade da entrega).
-7. Padronização e clareza das mensagens de erro.
-8. Organização dos commits.
-9. Implementação de logs.
-10. Adesão às boas práticas de API RESTful.
+Ou se usar npm:
 
-## 🚀 **Entrega**
+```env
+npm install
+```
 
-1. Crie um repositório público com a base desse código.
-2. Crie uma branch para realizar o seu trabalho.
-3. Ao finalizar, faça um pull request para a branch `main` do seu repositório.
-4. Envie um email para `rh@ozmap.com.br` informando que o teste foi concluído.
-5. Aguarde nosso feedback.
+Suba os containers do Docker:
 
----
+O projeto inclui configuração do Docker para facilitar o ambiente de desenvolvimento. Execute:
 
-Estamos ansiosos para ver sua implementação e criatividade em ação! Boa sorte e que a força do código esteja com você! 🚀
+```env
+docker-compose up
+```
+
+Execute a aplicação:
+
+Para rodar o servidor localmente, use:
+
+Se usar Yarn:
+
+```env
+yarn dev
+```
+
+Ou se usar npm:
+
+```env
+npm run dev
+```
+
+A aplicação estará disponível em http://localhost:3000.
+
+## Endpoints
+
+A API fornece os seguintes endpoints:
+
+- **GET** /api-docs: Acesse a documentação interativa da API via Swagger.
+- **POST** /users: Cria um usuário.
+- **GET** /users: Lista todos os usuários.
+- **GET** /users/:id: Obtém detalhes de um usuário específico.
+- **POST** /regions: Cria uma nova região.
+- **GET** /regions: Lista todas as regiões.
+- **GET** /geocode/coordinates: Converte um endereço para coordenadas geográficas.
+- **GET** /geocode/address: Converte coordenadas geográficas em um endereço.
+
+## Testes
+
+Execute os testes para garantir que tudo está funcionando corretamente. Use o comando abaixo:
+
+Se estiver usando Yarn:
+
+```env
+yarn dev
+```
+
+Ou se usar npm:
+
+```env
+npm run dev
+```
