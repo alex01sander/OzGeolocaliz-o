@@ -1,69 +1,76 @@
 import { Request, Response } from "express";
-import regionService from "../services/regionService";
+import { RegionService } from "../services/regionService";
 import { StatusCodes } from "http-status-codes";
 
 export const createRegion = async (req: Request, res: Response) => {
   try {
-    const region = await regionService.createRegion(req.body);
+    const { name, coordinates, userId } = req.body;
+    const region = await RegionService.createRegion(name, coordinates, userId);
     return res.status(StatusCodes.CREATED).json(region);
   } catch (error) {
+    console.error("Error creating region:", error);
     return res
-      .status(StatusCodes.INTERNAL_SERVER_ERROR)
-      .json({ message: "Error creating region", error: error.message });
+      .status(error.message.includes("not found") ? 404 : 400)
+      .json({ message: error.message });
   }
 };
 
 export const getRegions = async (req: Request, res: Response) => {
   try {
-    const regions = await regionService.getRegions();
+    const regions = await RegionService.getRegions();
     return res.status(StatusCodes.OK).json(regions);
   } catch (error) {
+    console.error("Error fetching regions:", error);
     return res
       .status(StatusCodes.INTERNAL_SERVER_ERROR)
-      .json({ message: "Error fetching regions", error: error.message });
+      .json({ message: "Error fetching regions" });
   }
 };
 
 export const getRegionById = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  console.log(`Attempting to fetch region with ID: ${id}`);
+
   try {
-    const region = await regionService.getRegionById(req.params.id);
-    if (!region) return res.status(404).json({ message: "Region not found" });
+    console.log(`Executing MongoDB query for ID: ${id}`);
+    const region = await RegionService.getRegionById(id);
+    console.log(`Region successfully found for ID: ${id}`);
     return res.status(StatusCodes.OK).json(region);
   } catch (error) {
-    return res
-      .status(500)
-      .json({ message: "Error querying region", error: error.message });
+    console.error(`Error fetching region - ID: ${id}`, error);
+    return res.status(StatusCodes.NOT_FOUND).json({ message: error.message });
   }
 };
 
 export const updateRegion = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { name, coordinates } = req.body;
+
   try {
-    const updatedRegion = await regionService.updateRegion(
-      req.params.id,
-      req.body,
-    );
-    if (!updatedRegion)
-      return res
-        .status(StatusCodes.NOT_FOUND)
-        .json({ message: "Region not found" });
-    return res.status(StatusCodes.OK).json(updatedRegion);
+    const region = await RegionService.updateRegion(id, name, coordinates);
+    return res.status(StatusCodes.OK).json(region);
   } catch (error) {
-    return res
-      .status(StatusCodes.INTERNAL_SERVER_ERROR)
-      .json({ message: "Error updating region", error: error.message });
+    console.error(`Error updating region - ID: ${id}`, error);
+    return res.status(error.message.includes("not found") ? 404 : 400).json({
+      message: error.message,
+      error: error instanceof Error ? error.message : String(error),
+    });
   }
 };
 
 export const deleteRegion = async (req: Request, res: Response) => {
+  const { id } = req.params;
+
   try {
-    const deletedRegion = await regionService.deleteRegion(req.params.id);
-    if (!deletedRegion)
-      return res.status(404).json({ message: "Region not found" });
-    return res.status(200).json({ message: "Region successfully deleted" });
-  } catch (error) {
+    await RegionService.deleteRegion(id);
     return res
-      .status(StatusCodes.INTERNAL_SERVER_ERROR)
-      .json({ message: "Error deleting region", error: error.message });
+      .status(StatusCodes.OK)
+      .json({ message: "Region successfully deleted" });
+  } catch (error) {
+    console.error(`Error deleting region - ID: ${id}`, error);
+    return res
+      .status(StatusCodes.NOT_ACCEPTABLE)
+      .json({ message: error.message });
   }
 };
 
@@ -73,31 +80,67 @@ export const findRegionsContainingPoint = async (
 ) => {
   try {
     const { longitude, latitude } = req.query;
-    const regions = await regionService.findRegionsContainingPoint(
-      parseFloat(longitude as string),
-      parseFloat(latitude as string),
-    );
+
+    if (!longitude || !latitude) {
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json({ message: "Longitude and latitude are required" });
+    }
+
+    const lng = parseFloat(longitude as string);
+    const lat = parseFloat(latitude as string);
+
+    if (isNaN(lng) || isNaN(lat)) {
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json({ message: "Invalid coordinates" });
+    }
+
+    const regions = await RegionService.findRegionsContainingPoint(lng, lat);
     return res.status(StatusCodes.OK).json(regions);
   } catch (error) {
+    console.error("Error finding regions containing point:", error);
     return res
       .status(StatusCodes.INTERNAL_SERVER_ERROR)
-      .json({ message: "Error finding regions", error: error.message });
+      .json({ message: error.message });
   }
 };
 
 export const findRegionsNearPoint = async (req: Request, res: Response) => {
   try {
-    const { longitude, latitude, maxDistance } = req.query;
-    const regions = await regionService.findRegionsNearPoint(
-      parseFloat(longitude as string),
-      parseFloat(latitude as string),
-      parseFloat(maxDistance as string),
+    const { longitude, latitude, maxDistance, onlyUserRegions } = req.query;
+    const userId = req.query.userId as string;
+
+    if (!longitude || !latitude || !maxDistance) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        message: "Longitude, latitude, and maxDistance are required",
+      });
+    }
+
+    const lng = parseFloat(longitude as string);
+    const lat = parseFloat(latitude as string);
+    const distance = parseFloat(maxDistance as string);
+
+    if (isNaN(lng) || isNaN(lat) || isNaN(distance)) {
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json({ message: "Invalid parameters" });
+    }
+
+    const regions = await RegionService.findRegionsNearPoint(
+      lng,
+      lat,
+      distance,
+      onlyUserRegions === "true",
+      userId,
     );
+
     return res.status(StatusCodes.OK).json(regions);
   } catch (error) {
+    console.error("Error finding regions near point:", error);
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-      message: "Error finding regions near point",
-      error: error.message,
+      message: "Internal server error",
+      error: error instanceof Error ? error.message : String(error),
     });
   }
 };
