@@ -3,6 +3,153 @@ import { UserModel } from "../models/user";
 
 type Coordinate = [number, number];
 
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Region:
+ *       type: object
+ *       properties:
+ *         _id:
+ *           type: string
+ *           description: Unique region ID
+ *         name:
+ *           type: string
+ *           description: Name of the region
+ *         user:
+ *           type: string
+ *           description: ID of the region owner
+ *         location:
+ *           type: object
+ *           description: GeoJSON location object
+ *           properties:
+ *             type:
+ *               type: string
+ *               enum: [Polygon]
+ *               description: Geometry type (Polygon)
+ *             coordinates:
+ *               type: array
+ *               items:
+ *                 type: array
+ *                 items:
+ *                   type: number
+ *                 minItems: 2
+ *                 maxItems: 2
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *           description: Creation date
+ *         updatedAt:
+ *           type: string
+ *           format: date-time
+ *           description: Last update date
+ *       example:
+ *         _id: "60d21b4667d0d8992e610c85"
+ *         name: "Downtown São Paulo"
+ *         user: "60d21b4667d0d8992e610c86"
+ *         location:
+ *           type: "Polygon"
+ *           coordinates: [[[-46.633308, -23.550520], [-46.634000, -23.551000], [-46.632000, -23.552000], [-46.631000, -23.551500], [-46.633308, -23.550520]]]
+ *         createdAt: "2023-05-12T15:30:45.123Z"
+ *         updatedAt: "2023-05-12T15:30:45.123Z"
+ */
+
+/**
+ * @swagger
+ * /regions:
+ *   get:
+ *     summary: Get all regions
+ *     tags: [Regions]
+ *     responses:
+ *       200:
+ *         description: List of regions
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Region'
+ *   post:
+ *     summary: Create a new region
+ *     tags: [Regions]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *               - coordinates
+ *               - userId
+ *             properties:
+ *               name:
+ *                 type: string
+ *               coordinates:
+ *                 type: array
+ *               userId:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Region created
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Region'
+ * /regions/{id}:
+ *   get:
+ *     summary: Get region by ID
+ *     tags: [Regions]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Region found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Region'
+ *   put:
+ *     summary: Update region
+ *     tags: [Regions]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               coordinates:
+ *                 type: array
+ *     responses:
+ *       200:
+ *         description: Region updated
+ *   delete:
+ *     summary: Delete region
+ *     tags: [Regions]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Region deleted
+ */
+
 export class RegionService {
   static async createRegion(
     name: string,
