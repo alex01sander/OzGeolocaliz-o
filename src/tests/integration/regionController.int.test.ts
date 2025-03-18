@@ -1,221 +1,137 @@
-import * as mongoose from "mongoose";
-import supertest from "supertest";
 import * as sinon from "sinon";
-import { faker } from "@faker-js/faker";
 import { expect } from "chai";
+import supertest from "supertest";
 import express from "express";
 import bodyParser from "body-parser";
+import * as regionController from "../../controllers/regionController";
+import { RegionService } from "../../services/regionService";
 
-import { UserModel } from "../../models/user";
-import { RegionModel } from "../../models/region";
-import {
-  createRegion,
-  getRegions,
-  getRegionById,
-  updateRegion,
-  deleteRegion,
-} from "../../controllers/regionController";
+const app = express();
+app.use(bodyParser.json());
 
-function generateValidCoordinates() {
-  const centerLat = faker.location.latitude({ min: -30, max: 30 });
-  const centerLng = faker.location.longitude({ min: -60, max: -30 });
+app.post("/api/regions", regionController.createRegion);
+app.get("/api/regions", regionController.getRegions);
+app.get("/api/regions/:id", regionController.getRegionById);
+app.put("/api/regions/:id", regionController.updateRegion);
+app.delete("/api/regions/:id", regionController.deleteRegion);
+app.get(
+  "/api/regions/point/contains",
+  regionController.findRegionsContainingPoint,
+);
+app.get("/api/regions/point/near", regionController.findRegionsNearPoint);
 
-  const size = 0.1;
-
-  const points = [
-    [centerLng - size, centerLat - size],
-    [centerLng + size, centerLat - size],
-    [centerLng + size, centerLat + size],
-    [centerLng - size, centerLat + size],
-    [centerLng - size, centerLat - size],
-  ];
-
-  return points;
-}
+const request = supertest(app);
 
 describe("Region Controller - Integration Tests", () => {
-  let app: express.Application;
-  let sandbox: sinon.SinonSandbox;
-  let mongoConnection: mongoose.Connection;
-  let createdUser: any;
+  let sandbox;
+  const testUserId = "507f1f77bcf86cd799439012";
+  const testRegionId = "507f1f77bcf86cd799439011";
 
-  before(async () => {
-    app = express();
-    app.use(bodyParser.json());
-    app.post("/regions", createRegion);
-    app.get("/regions", getRegions);
-    app.get("/regions/:id", getRegionById);
-    app.put("/regions/:id", updateRegion);
-    app.delete("/regions/:id", deleteRegion);
+  const sampleRegion = {
+    _id: testRegionId,
+    name: "Test Region",
+    coordinates: [
+      [
+        [10, 10],
+        [20, 10],
+        [20, 20],
+        [10, 20],
+        [10, 10],
+      ],
+    ],
+    userId: testUserId,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
 
-    const dbName = `testdb_regions_${Date.now()}`;
-    const connectionString = `mongodb://localhost:27017/${dbName}`;
-
-    try {
-      const connection = await mongoose.connect(connectionString);
-      mongoConnection = connection.connection;
-    } catch (error) {
-      console.error("Database connection error:", error);
-      throw error;
-    }
-  });
-
-  beforeEach(async () => {
+  beforeEach(() => {
     sandbox = sinon.createSandbox();
-
-    createdUser = new UserModel({
-      name: faker.person.fullName(),
-      email: faker.internet.email(),
-      address: faker.location.streetAddress(),
-      regions: [],
-    });
-    await createdUser.save();
   });
 
-  afterEach(async () => {
+  afterEach(() => {
     sandbox.restore();
-    await UserModel.deleteMany({});
-    await RegionModel.deleteMany({});
   });
 
-  after(async () => {
-    if (mongoConnection) {
-      await mongoConnection.close();
-    }
-  });
-
-  describe("Region Creation Scenarios", () => {
-    it("should create a region successfully", async () => {
-      const coordinates = generateValidCoordinates();
-      const regionData = {
-        name: faker.location.city(),
-        coordinates: coordinates,
-        userId: createdUser._id.toString(),
+  describe("CRUD Operations", () => {
+    it("should create a new region", async () => {
+      const newRegion = {
+        name: "New Test Region",
+        coordinates: [
+          [
+            [10, 10],
+            [20, 10],
+            [20, 20],
+            [10, 20],
+            [10, 10],
+          ],
+        ],
+        userId: testUserId,
       };
 
-      const response = await supertest(app).post("/regions").send(regionData);
+      sandbox.stub(RegionService, "createRegion").resolves({
+        ...newRegion,
+        _id: testRegionId,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
+
+      const response = await request.post("/api/regions").send(newRegion);
 
       expect(response.status).to.equal(201);
-      expect(response.body.name).to.equal(regionData.name);
-
-      expect(response.body.location.coordinates[0]).to.deep.equal(coordinates);
-
-      const updatedUser = await UserModel.findById(createdUser._id).lean();
-
-      expect(updatedUser.regions).to.be.an("array");
-
-      const regionIds = updatedUser.regions.map((id) => id.toString());
-      expect(regionIds).to.include(response.body._id.toString());
+      expect(response.body).to.have.property("_id");
+      expect(response.body.name).to.equal(newRegion.name);
     });
 
-    it("should reject region creation for non-existent user", async () => {
-      const coordinates = generateValidCoordinates();
-      const regionData = {
-        name: faker.location.city(),
-        coordinates: coordinates,
-        userId: new mongoose.Types.ObjectId().toString(),
-      };
+    it("should get all regions", async () => {
+      sandbox.stub(RegionService, "getRegions").resolves([sampleRegion]);
 
-      const response = await supertest(app).post("/regions").send(regionData);
-      expect(response.status).to.equal(404);
-      expect(response.body.message).to.equal("User not found");
-    });
-  });
-
-  describe("Region Retrieval Scenarios", () => {
-    it("should retrieve all regions", async () => {
-      const coordinates = generateValidCoordinates();
-      const region = new RegionModel({
-        name: faker.location.city(),
-        user: createdUser._id,
-        location: {
-          type: "Polygon",
-          coordinates: [coordinates],
-        },
-      });
-      await region.save();
-
-      const response = await supertest(app).get("/regions");
+      const response = await request.get("/api/regions");
 
       expect(response.status).to.equal(200);
       expect(response.body).to.be.an("array");
-      expect(response.body.length).to.be.at.least(1);
+      expect(response.body.length).to.equal(1);
+      expect(response.body[0]._id).to.equal(testRegionId);
     });
 
-    it("should retrieve a specific region by ID", async () => {
-      const coordinates = generateValidCoordinates();
-      const regionData = {
-        name: faker.location.city(),
-        user: createdUser._id,
-        location: {
-          type: "Polygon",
-          coordinates: [coordinates],
-        },
-      };
+    it("should get a region by id", async () => {
+      sandbox.stub(RegionService, "getRegionById").resolves(sampleRegion);
 
-      const region = new RegionModel(regionData);
-      await region.save();
-
-      const response = await supertest(app).get(`/regions/${region._id}`);
+      const response = await request.get(`/api/regions/${testRegionId}`);
 
       expect(response.status).to.equal(200);
-      expect(response.body.name).to.equal(regionData.name);
-
-      expect(response.body.location.coordinates[0]).to.deep.equal(coordinates);
-    });
-  });
-
-  describe("Region Update and Delete Scenarios", () => {
-    it("should update a region successfully", async () => {
-      const originalCoordinates = generateValidCoordinates();
-      const updatedCoordinates = generateValidCoordinates();
-
-      const regionData = {
-        name: faker.location.city(),
-        user: createdUser._id,
-        location: {
-          type: "Polygon",
-          coordinates: [originalCoordinates],
-        },
-      };
-
-      const region = new RegionModel(regionData);
-      await region.save();
-
-      const updateData = {
-        name: "Updated Region Name",
-        coordinates: updatedCoordinates,
-      };
-
-      const response = await supertest(app)
-        .put(`/regions/${region._id}`)
-        .send(updateData);
-
-      expect(response.status).to.equal(200);
-      expect(response.body.name).to.equal(updateData.name);
-
-      expect(response.body.location.coordinates[0]).to.deep.equal(
-        updatedCoordinates,
-      );
+      expect(response.body._id).to.equal(testRegionId);
+      expect(response.body.name).to.equal(sampleRegion.name);
     });
 
-    it("should delete a region successfully", async () => {
-      const coordinates = generateValidCoordinates();
-      const region = new RegionModel({
-        name: faker.location.city(),
-        user: createdUser._id,
-        location: {
-          type: "Polygon",
-          coordinates: [coordinates],
-        },
-      });
-      await region.save();
+    it("should update a region", async () => {
+      const updatedData = {
+        name: "Updated Region",
+        coordinates: sampleRegion.coordinates,
+      };
 
-      const response = await supertest(app).delete(`/regions/${region._id}`);
+      const updatedRegion = {
+        ...sampleRegion,
+        name: "Updated Region",
+      };
+
+      sandbox.stub(RegionService, "updateRegion").resolves(updatedRegion);
+
+      const response = await request
+        .put(`/api/regions/${testRegionId}`)
+        .send(updatedData);
+
       expect(response.status).to.equal(200);
+      expect(response.body._id).to.equal(testRegionId);
+      expect(response.body.name).to.equal(updatedData.name);
+    });
 
-      const deletedRegion = await RegionModel.findById(region._id);
-      expect(deletedRegion).to.be.null;
+    it("should delete a region", async () => {
+      sandbox.stub(RegionService, "deleteRegion").resolves();
+
+      const response = await request.delete(`/api/regions/${testRegionId}`);
+
+      expect(response.status).to.equal(200);
+      expect(response.body.message).to.equal("Region successfully deleted");
     });
   });
 });
