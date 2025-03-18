@@ -74,14 +74,19 @@ describe("User Model - Integration Tests", () => {
   });
 
   describe("User Creation", () => {
-    it("should create user with address", async () => {
+    it("should log detailed information about user creation", async () => {
       const userData = {
         name: faker.person.fullName(),
         email: faker.internet.email(),
         address: faker.location.streetAddress({ useFullAddress: true }),
       };
 
+      console.log("Test userData:", userData);
+
       const response = await supertest(app).post("/users").send(userData);
+
+      console.log("Full response status:", response.status);
+      console.log("Full response body:", response.body);
 
       expect(response.status).to.equal(201);
       expect(response.body.name).to.equal(userData.name);
