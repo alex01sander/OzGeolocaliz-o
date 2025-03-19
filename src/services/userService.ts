@@ -1,4 +1,5 @@
 import { UserModel } from "../models/user";
+import mongoose from "mongoose";
 
 /**
  * @swagger
@@ -226,19 +227,40 @@ class UserService {
   }
 
   async getUserById(id: string) {
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return null;
+    }
     const user = await UserModel.findById(id);
     return user;
   }
 
   async updateUser(id: string, userData: any) {
-    const updatedUser = await UserModel.findByIdAndUpdate(id, userData, {
-      new: true,
-      runValidators: true,
-    });
-    return updatedUser;
+    try {
+      if (!mongoose.Types.ObjectId.isValid(id)) {
+        return null;
+      }
+
+      const existingUser = await UserModel.findById(id);
+      if (!existingUser) {
+        return null;
+      }
+
+      const updatedUser = await UserModel.findByIdAndUpdate(id, userData, {
+        new: true,
+        runValidators: false,
+      });
+
+      return updatedUser;
+    } catch (error) {
+      console.error("Error in updateUser service:", error);
+      return null;
+    }
   }
 
   async deleteUser(id: string) {
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return null;
+    }
     const user = await UserModel.findByIdAndDelete(id);
     return user;
   }
