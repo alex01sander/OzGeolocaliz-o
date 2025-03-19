@@ -9,7 +9,6 @@ import {
   modelOptions,
 } from "@typegoose/typegoose";
 import lib from "../utils/lib";
-import { RegionModel } from "./region";
 
 import ObjectId = mongoose.Types.ObjectId;
 
