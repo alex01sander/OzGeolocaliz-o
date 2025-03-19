@@ -3,7 +3,7 @@ import { expect } from "chai";
 import supertest from "supertest";
 import express from "express";
 import bodyParser from "body-parser";
-import mongoose from "mongoose";
+import { StatusCodes } from "http-status-codes";
 
 import * as regionController from "../../controllers/regionController";
 import { RegionService } from "../../services/regionService";
@@ -70,14 +70,14 @@ describe("Region Controller Tests", () => {
         coordinates: sampleRegion.coordinates,
         userId: sampleRegion.userId,
       });
-      expect(response.status).to.equal(201);
+      expect(response.status).to.equal(StatusCodes.CREATED);
       expect(response.body).to.deep.equal(sampleRegion);
     });
 
     it("should return all regions", async () => {
       sandbox.stub(RegionService, "getRegions").resolves([sampleRegion]);
       const response = await request.get("/api/regions");
-      expect(response.status).to.equal(200);
+      expect(response.status).to.equal(StatusCodes.OK);
       expect(response.body).to.be.an("array").with.lengthOf(1);
       expect(response.body[0]).to.deep.equal(sampleRegion);
     });
@@ -85,7 +85,7 @@ describe("Region Controller Tests", () => {
     it("should retrieve a region by ID", async () => {
       sandbox.stub(RegionService, "getRegionById").resolves(sampleRegion);
       const response = await request.get(`/api/regions/${sampleRegion._id}`);
-      expect(response.status).to.equal(200);
+      expect(response.status).to.equal(StatusCodes.OK);
       expect(response.body).to.deep.equal(sampleRegion);
     });
 
@@ -98,14 +98,14 @@ describe("Region Controller Tests", () => {
           name: "Updated Region",
           coordinates: sampleRegion.coordinates,
         });
-      expect(response.status).to.equal(200);
+      expect(response.status).to.equal(StatusCodes.OK);
       expect(response.body.name).to.equal("Updated Region");
     });
 
     it("should delete a region", async () => {
       sandbox.stub(RegionService, "deleteRegion").resolves(sampleRegion);
       const response = await request.delete(`/api/regions/${sampleRegion._id}`);
-      expect(response.status).to.equal(200); // ou 204 se for "No Content"
+      expect(response.status).to.equal(StatusCodes.OK);
       expect(response.body.message).to.equal("Region successfully deleted");
     });
 
@@ -116,7 +116,7 @@ describe("Region Controller Tests", () => {
       const response = await request.get(
         `/api/regions/point/contains?longitude=${samplePoint.longitude}&latitude=${samplePoint.latitude}`,
       );
-      expect(response.status).to.equal(200);
+      expect(response.status).to.equal(StatusCodes.OK);
       expect(response.body).to.be.an("array").with.lengthOf(1);
       expect(response.body[0]).to.deep.equal(sampleRegion);
     });
@@ -128,7 +128,7 @@ describe("Region Controller Tests", () => {
       const response = await request.get(
         `/api/regions/point/near?longitude=${samplePoint.longitude}&latitude=${samplePoint.latitude}&maxDistance=${samplePoint.maxDistance}`,
       );
-      expect(response.status).to.equal(200);
+      expect(response.status).to.equal(StatusCodes.OK);
       expect(response.body).to.be.an("array").with.lengthOf(1);
       expect(response.body[0]).to.deep.equal(sampleRegion);
     });
@@ -140,7 +140,9 @@ describe("Region Controller Tests", () => {
         try {
           throw new Error("Region not found");
         } catch (error) {
-          return res.status(404).json({ message: error.message });
+          return res
+            .status(StatusCodes.NOT_FOUND)
+            .json({ message: error.message });
         }
       };
 
@@ -148,7 +150,7 @@ describe("Region Controller Tests", () => {
 
       const response = await request.get("/api/test-region-error");
 
-      expect(response.status).to.equal(404);
+      expect(response.status).to.equal(StatusCodes.NOT_FOUND);
       expect(response.body.message).to.equal("Region not found");
     });
 
@@ -161,13 +163,13 @@ describe("Region Controller Tests", () => {
         coordinates: "invalid-format",
         userId: sampleRegion.userId,
       });
-      expect(response.status).to.equal(400);
+      expect(response.status).to.equal(422);
       expect(response.body.message).to.equal("Invalid coordinates");
     });
 
     it("should handle missing parameters in queries", async () => {
       const response = await request.get("/api/regions/point/contains");
-      expect(response.status).to.equal(400);
+      expect(response.status).to.equal(422);
       expect(response.body.message).to.equal(
         "Longitude and latitude are required",
       );

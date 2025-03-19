@@ -109,9 +109,17 @@ export const createRegion = async (req: Request, res: Response) => {
     return res.status(StatusCodes.CREATED).json(region);
   } catch (error) {
     console.error("Error creating region:", error);
-    return res
-      .status(error.message.includes("not found") ? 404 : 400)
-      .json({ message: error.message });
+    let statusCode;
+
+    if (error.message.includes("not found")) {
+      statusCode = StatusCodes.NOT_FOUND;
+    } else if (error.message.includes("Invalid coordinates")) {
+      statusCode = StatusCodes.UNPROCESSABLE_ENTITY;
+    } else {
+      statusCode = StatusCodes.BAD_REQUEST;
+    }
+
+    return res.status(statusCode).json({ message: error.message });
   }
 };
 
@@ -228,10 +236,12 @@ export const updateRegion = async (req: Request, res: Response) => {
   const region = await RegionService.updateRegion(id, name, coordinates);
 
   if (!region) {
-    return res.status(404).json({ message: "Region not found" });
+    return res
+      .status(StatusCodes.NOT_FOUND)
+      .json({ message: "Region not found" });
   }
 
-  return res.status(200).json(region);
+  return res.status(StatusCodes.OK).json(region);
 };
 
 /**
@@ -268,10 +278,14 @@ export const deleteRegion = async (req: Request, res: Response) => {
   const region = await RegionService.deleteRegion(id);
 
   if (!region) {
-    return res.status(404).json({ message: "Region not found" });
+    return res
+      .status(StatusCodes.NOT_FOUND)
+      .json({ message: "Region not found" });
   }
 
-  return res.status(200).json({ message: "Region successfully deleted" });
+  return res
+    .status(StatusCodes.OK)
+    .json({ message: "Region successfully deleted" });
 };
 
 /**
@@ -318,7 +332,7 @@ export const findRegionsContainingPoint = async (
 
     if (!longitude || !latitude) {
       return res
-        .status(StatusCodes.BAD_REQUEST)
+        .status(StatusCodes.UNPROCESSABLE_ENTITY)
         .json({ message: "Longitude and latitude are required" });
     }
 
@@ -327,7 +341,7 @@ export const findRegionsContainingPoint = async (
 
     if (isNaN(lng) || isNaN(lat)) {
       return res
-        .status(StatusCodes.BAD_REQUEST)
+        .status(StatusCodes.UNPROCESSABLE_ENTITY)
         .json({ message: "Invalid coordinates" });
     }
 
@@ -400,7 +414,7 @@ export const findRegionsNearPoint = async (req: Request, res: Response) => {
     const userId = req.query.userId as string;
 
     if (!longitude || !latitude || !maxDistance) {
-      return res.status(StatusCodes.BAD_REQUEST).json({
+      return res.status(StatusCodes.UNPROCESSABLE_ENTITY).json({
         message: "Longitude, latitude, and maxDistance are required",
       });
     }
@@ -411,7 +425,7 @@ export const findRegionsNearPoint = async (req: Request, res: Response) => {
 
     if (isNaN(lng) || isNaN(lat) || isNaN(distance)) {
       return res
-        .status(StatusCodes.BAD_REQUEST)
+        .status(StatusCodes.UNPROCESSABLE_ENTITY)
         .json({ message: "Invalid parameters" });
     }
 
