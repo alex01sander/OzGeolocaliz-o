@@ -102,7 +102,7 @@ export const createUser = async (req: Request, res: Response) => {
       (!userData.coordinates || userData.coordinates.length !== 2)
     ) {
       return res
-        .status(StatusCodes.BAD_REQUEST)
+        .status(StatusCodes.UNPROCESSABLE_ENTITY)
         .json({ message: "Provide address or coordinates." });
     }
 
