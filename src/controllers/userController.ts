@@ -112,7 +112,7 @@ export const createUser = async (req: Request, res: Response) => {
           userData.address,
         );
         if (!coordinates) {
-          return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+          return res.status(StatusCodes.UNPROCESSABLE_ENTITY).json({
             message: "Internal server error",
             error: "Coordinates not found for the address.",
           });
@@ -132,9 +132,9 @@ export const createUser = async (req: Request, res: Response) => {
           userData.coordinates,
         );
         if (!address) {
-          return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+          return res.status(StatusCodes.UNPROCESSABLE_ENTITY).json({
             message: "Internal server error",
-            error: "Address not found for coordinates.",
+            error: "Unable to process coordinates into an address.",
           });
         }
         userData.address = address;

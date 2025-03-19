@@ -112,7 +112,7 @@ describe("User Creation Controller - Integration Tests", () => {
 
       const response = await supertest(app).post("/users").send(userData);
 
-      expect(response.status).to.equal(500);
+      expect(response.status).to.equal(422);
       expect(response.body.message).to.equal("Internal server error");
       expect(response.body.error).to.equal(
         "Coordinates not found for the address.",
@@ -134,10 +134,10 @@ describe("User Creation Controller - Integration Tests", () => {
 
       const response = await supertest(app).post("/users").send(userData);
 
-      expect(response.status).to.equal(500);
+      expect(response.status).to.equal(422);
       expect(response.body.message).to.equal("Internal server error");
       expect(response.body.error).to.equal(
-        "Address not found for coordinates.",
+        "Unable to process coordinates into an address.",
       );
 
       sinon.assert.calledOnce(addressStub);
