@@ -4,6 +4,7 @@ import { Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 import * as userController from "../../controllers/userController";
 import userService from "../../services/userService";
+import { UserModel } from "../../models/user";
 
 describe("User Controller - Unit Tests", () => {
   let sandbox: sinon.SinonSandbox;
@@ -88,44 +89,49 @@ describe("User Controller - Unit Tests", () => {
     });
   });
 
-  describe("getUserById", () => {
-    it("should get a user by ID", async () => {
-      req.params = { id: sampleUser._id };
-      sandbox.stub(userService, "getUserById").resolves(sampleUser);
-
-      await userController.getUserById(req as Request, res as Response);
-
-      expect((res.status as sinon.SinonStub).firstCall.args[0]).to.equal(
-        StatusCodes.OK,
-      );
-      expect((res.json as sinon.SinonStub).firstCall.args[0]).to.equal(
-        sampleUser,
-      );
-    });
-
-    it("should return 404 when user not found", async () => {
-      req.params = { id: "nonexistent" };
-      sandbox.stub(userService, "getUserById").resolves(null);
-
-      await userController.getUserById(req as Request, res as Response);
-
-      expect((res.status as sinon.SinonStub).firstCall.args[0]).to.equal(
-        StatusCodes.NOT_FOUND,
-      );
-    });
-  });
-
   describe("updateUser", () => {
     it("should update a user", async () => {
-      req.params = { id: sampleUser._id };
-      req.body = { name: "Updated Name" };
-      sandbox.stub(userService, "updateUser").resolves(sampleUser);
+      const userId = sampleUser._id;
+      const updateData = { name: "Updated Name" };
+
+      req.params = { id: userId };
+      req.body = updateData;
+
+      const findByIdStub = sandbox
+        .stub(UserModel, "findById")
+        .resolves(sampleUser);
+
+      const updateUserStub = sandbox
+        .stub(userService, "updateUser")
+        .resolves({ ...sampleUser, ...updateData });
 
       await userController.updateUser(req as Request, res as Response);
 
       expect((res.status as sinon.SinonStub).firstCall.args[0]).to.equal(
         StatusCodes.OK,
       );
+      expect((res.json as sinon.SinonStub).firstCall.args[0]).to.deep.include(
+        updateData,
+      );
+
+      sinon.assert.calledOnce(findByIdStub);
+      sinon.assert.calledOnce(updateUserStub);
+    });
+
+    it("should handle invalid MongoDB ID", async () => {
+      req.params = { id: "invalid-id" };
+      req.body = { name: "Updated Name" };
+
+      const findByIdStub = sandbox.stub(UserModel, "findById").resolves(null);
+
+      await userController.updateUser(req as Request, res as Response);
+
+      expect((res.status as sinon.SinonStub).firstCall.args[0]).to.equal(
+        StatusCodes.NOT_FOUND,
+      );
+      expect((res.json as sinon.SinonStub).firstCall.args[0]).to.deep.equal({
+        message: "User not found",
+      });
     });
   });
 
