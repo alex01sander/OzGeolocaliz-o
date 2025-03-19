@@ -8,7 +8,6 @@ import { UserModel } from "../../models/user";
 import { faker } from "@faker-js/faker";
 import userRouter from "../../routes/userRoutes";
 import lib from "../../utils/lib";
-import { STATUS_CODES } from "http";
 
 describe("User Routes - Integration Tests", () => {
   let app: express.Application;
@@ -59,7 +58,7 @@ describe("User Routes - Integration Tests", () => {
         .get("/api/users")
         .query({ page: 1, limit: 10 });
 
-      expect(response.status).to.equal(STATUS_CODES.OK);
+      expect(response.status).to.equal(200);
       expect(response.body).to.have.property("users");
       expect(response.body.users).to.be.an("array");
       expect(response.body.users.length).to.equal(3);
@@ -92,42 +91,47 @@ describe("User Routes - Integration Tests", () => {
     });
   });
 
-  describe("PUT /users/:id", () => {
+  describe("PATCH /users/:id", () => {
     it("should update a user successfully", async () => {
-      const testUser = testUsers[0];
-      const newName = faker.person.fullName();
+      const user = new UserModel({
+        name: "Test User",
+        email: "test@example.com",
 
-      const requestBody = { name: newName };
+        address: "123 Test Street, Test City",
+        coordinates: [faker.location.latitude(), faker.location.longitude()],
+      });
+      await user.save();
 
-      console.log("Trying to update user with ID:", testUser._id);
-      console.log("Request body:", JSON.stringify(requestBody));
+      console.log("Created user ID:", user._id);
+
+      const newName = "Updated Name";
 
       const response = await supertest(app)
-        .put(`/api/users/${testUser._id}`)
-        .send(requestBody);
+        .patch(`/api/users/${user._id}`)
+        .send({
+          name: newName,
 
-      console.log("API Response (status):", response.status);
-      console.log("API Response (body):", JSON.stringify(response.body));
+          address: user.address,
+          coordinates: user.coordinates,
+        });
 
-      if (response.status === 500) {
-        console.log(
-          "Error 500 received. Error message:",
-          response.body.message || "No message",
-        );
-        console.log("Error 500 details:", response.body.error || "No details");
-      }
+      console.log("Response status:", response.status);
+      console.log("Response body:", response.body);
 
-      const updatedUser = await UserModel.findById(testUser._id).lean();
-      console.log("User in the database after update attempt:", updatedUser);
+      expect(response.status).to.equal(200);
+      expect(response.body).to.have.property("name", newName);
     });
 
     it("should return 404 when user to update is not found", async () => {
       const nonExistentId = new mongoose.Types.ObjectId().toString();
 
       const response = await supertest(app)
-        .put(`/api/users/${nonExistentId}`)
+        .patch(`/api/users/${nonExistentId}`)
         .send({
           name: "New Name",
+
+          address: "456 Non-existent Street",
+          coordinates: [34.0522, -118.2437],
         });
 
       expect(response.status).to.equal(404);
