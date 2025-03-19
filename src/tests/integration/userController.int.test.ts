@@ -9,7 +9,6 @@ import bodyParser from "body-parser";
 import { UserModel } from "../../models/user";
 import lib from "../../utils/lib";
 import { createUser } from "../../controllers/userController";
-import { STATUS_CODES } from "http";
 
 describe("User Creation Controller - Integration Tests", () => {
   let app: express.Application;
@@ -62,7 +61,7 @@ describe("User Creation Controller - Integration Tests", () => {
 
       const response = await supertest(app).post("/users").send(userData);
 
-      expect(response.status).to.equal(STATUS_CODES.CREATED);
+      expect(response.status).to.equal(201);
       expect(response.body.name).to.equal(userData.name);
       expect(response.body.email.toLowerCase()).to.equal(
         userData.email.toLowerCase(),
@@ -87,7 +86,7 @@ describe("User Creation Controller - Integration Tests", () => {
 
       const response = await supertest(app).post("/users").send(userData);
 
-      expect(response.status).to.equal(STATUS_CODES.CREATED);
+      expect(response.status).to.equal(201);
       expect(response.body.name).to.equal(userData.name);
       expect(response.body.email.toLowerCase()).to.equal(
         userData.email.toLowerCase(),
@@ -113,7 +112,7 @@ describe("User Creation Controller - Integration Tests", () => {
 
       const response = await supertest(app).post("/users").send(userData);
 
-      expect(response.status).to.equal(STATUS_CODES.INTERNAL_SERVER_ERROR);
+      expect(response.status).to.equal(500);
       expect(response.body.message).to.equal("Internal server error");
       expect(response.body.error).to.equal(
         "Coordinates not found for the address.",
@@ -135,7 +134,7 @@ describe("User Creation Controller - Integration Tests", () => {
 
       const response = await supertest(app).post("/users").send(userData);
 
-      expect(response.status).to.equal(STATUS_CODES.INTERNAL_SERVER_ERROR);
+      expect(response.status).to.equal(500);
       expect(response.body.message).to.equal("Internal server error");
       expect(response.body.error).to.equal(
         "Address not found for coordinates.",

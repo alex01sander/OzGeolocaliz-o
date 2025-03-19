@@ -89,7 +89,7 @@ describe("User Model - Integration Tests", () => {
       console.log("Full response status:", response.status);
       console.log("Full response body:", response.body);
 
-      expect(response.status).to.equal(STATUS_CODES.CREATED);
+      expect(response.status).to.equal(201);
       expect(response.body.name).to.equal(userData.name);
       expect(response.body.email).to.equal(userData.email.toLowerCase());
       expect(response.body.address).to.equal(userData.address);
@@ -111,7 +111,7 @@ describe("User Model - Integration Tests", () => {
 
       const response = await supertest(app).post("/users").send(userData);
 
-      expect(response.status).to.equal(STATUS_CODES.CREATED);
+      expect(response.status).to.equal(201);
       expect(response.body.name).to.equal(userData.name);
       expect(response.body.email).to.equal(userData.email.toLowerCase());
       expect(response.body.coordinates).to.deep.equal(coordinates);
@@ -125,7 +125,7 @@ describe("User Model - Integration Tests", () => {
 
       const response = await supertest(app).post("/users").send(userData);
 
-      expect(response.status).to.equal(STATUS_CODES.BAD_REQUEST);
+      expect(response.status).to.equal(400);
       expect(response.body.message).to.equal("Provide address or coordinates.");
     });
   });
@@ -152,7 +152,7 @@ describe("User Model - Integration Tests", () => {
 
       const response = await supertest(app).get("/users");
 
-      expect(response.status).to.equal(STATUS_CODES.OK);
+      expect(response.status).to.equal(200);
       expect(response.body.users).to.be.an("array");
       expect(response.body.users).to.have.lengthOf(2);
     });
@@ -187,7 +187,7 @@ describe("User Model - Integration Tests", () => {
         .put(`/users/${user._id}`)
         .send(updateData);
 
-      expect(response.status).to.equal(STATUS_CODES.OK);
+      expect(response.status).to.equal(200);
       expect(response.body.name).to.equal(updateData.name);
       expect(response.body.email).to.equal(updateData.email.toLowerCase());
 
@@ -211,7 +211,7 @@ describe("User Model - Integration Tests", () => {
 
       const response = await supertest(app).delete(`/users/${user._id}`);
 
-      expect(response.status).to.equal(STATUS_CODES.OK);
+      expect(response.status).to.equal(200);
       expect(response.body.message).to.equal("User successfully deleted");
 
       const deletedUser = await UserModel.findById(user._id);
