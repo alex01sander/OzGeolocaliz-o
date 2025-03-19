@@ -1,66 +1,85 @@
-import * as app from "express";
-import { UserModel } from "./models";
+import express from "express";
+import userRoutes from "./routes/userRoutes";
+import regionRoutes from "./routes/regionRoutes";
+import swaggerJSDoc from "swagger-jsdoc";
+import swaggerUi from "swagger-ui-express";
+import { StatusCodes } from "http-status-codes";
 
-const server = app();
-const router = app.Router();
+const server = express();
 
-const STATUS = {
-  OK: 200,
-  CREATED: 201,
-  UPDATED: 201,
-  NOT_FOUND: 400,
-  BAD_REQUEST: 400,
-  INTERNAL_SERVER_ERROR: 500,
-  DEFAULT_ERROR: 418,
+const swaggerOptions = {
+  definition: {
+    openapi: "3.0.0",
+    info: {
+      title: "User and Region API",
+      version: "1.0.0",
+      description: "API for user and region management",
+    },
+    servers: [
+      {
+        url: "http://localhost:3000",
+        description: "Local Docker Server",
+      },
+    ],
+  },
+  apis: ["./src/**/*.ts", "./**/*.ts", "./dist/**/*.js"],
 };
 
-router.get("/user", async (req, res) => {
-  const { page, limit } = req.query;
+server.use(express.json());
 
-  const [users, total] = await Promise.all([
-    UserModel.find().lean(),
-    UserModel.count(),
-  ]);
+server.use((req, res, next) => {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Credentials", "true");
+  res.setHeader("Access-Control-Max-Age", "1800");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  res.setHeader(
+    "Access-Control-Allow-Methods",
+    "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+  );
 
-  return res.json({
-    rows: users,
-    page,
-    limit,
-    total,
+  if (req.method === "OPTIONS") {
+    return res.status(StatusCodes.OK).end();
+  }
+
+  next();
+});
+
+server.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+  next();
+});
+
+let swaggerDocs;
+try {
+  swaggerDocs = swaggerJSDoc(swaggerOptions);
+  console.log("Swagger loaded successfully");
+} catch (error) {
+  console.error("Error loading Swagger:", error);
+  swaggerDocs = {};
+}
+
+server.get("/", (req, res) => {
+  res.json({
+    message: "API is running. Access /api-docs for documentation.",
   });
 });
 
-router.get("/users/:id", async (req, res) => {
-  const { id } = req.params;
+console.log("Registering user routes");
+server.use(userRoutes);
+console.log("Registering region routes");
+server.use(regionRoutes);
 
-  const user = await UserModel.findOne({ _id: id }).lean();
+try {
+  server.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
+  console.log("Swagger UI configured successfully");
+} catch (error) {
+  console.error("Error configuring Swagger UI:", error);
+}
 
-  if (!user) {
-    res
-      .status(STATUS.INTERNAL_SERVER_ERROR)
-      .json({ message: "Region not found" });
-  }
+const PORT = process.env.PORT || 3000;
 
-  return user;
+server.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
 
-router.put("/users/:id", async (req, res) => {
-  const { id } = req.params;
-  const { update } = req.body;
-
-  const user = await UserModel.findOne({ _id: id }).lean();
-
-  if (!user) {
-    res.status(STATUS.DEFAULT_ERROR).json({ message: "Region not found" });
-  }
-
-  user.name = update.name;
-
-  await user.save();
-
-  return res.sendStatus(201);
-});
-
-server.use(router);
-
-export default server.listen(3003);
+export default server;
