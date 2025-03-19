@@ -5,13 +5,7 @@ import express from "express";
 import bodyParser from "body-parser";
 import * as regionController from "../../controllers/regionController";
 import { RegionService } from "../../services/regionService";
-
-const HTTP_STATUS = {
-  OK: 200,
-  CREATED: 201,
-  BAD_REQUEST: 400,
-  NOT_FOUND: 404,
-};
+import { StatusCodes } from "http-status-codes";
 
 const app = express();
 app.use(bodyParser.json());
@@ -84,7 +78,7 @@ describe("Region Controller - Integration Tests", () => {
 
       const response = await request.post("/api/regions").send(newRegion);
 
-      expect(response.status).to.equal(HTTP_STATUS.CREATED);
+      expect(response.status).to.equal(StatusCodes.CREATED);
       expect(response.body).to.have.property("_id");
       expect(response.body.name).to.equal(newRegion.name);
     });
@@ -94,7 +88,7 @@ describe("Region Controller - Integration Tests", () => {
 
       const response = await request.get("/api/regions");
 
-      expect(response.status).to.equal(HTTP_STATUS.OK);
+      expect(response.status).to.equal(StatusCodes.OK);
       expect(response.body).to.be.an("array");
       expect(response.body.length).to.equal(1);
       expect(response.body[0]._id).to.equal(testRegionId);
@@ -105,7 +99,7 @@ describe("Region Controller - Integration Tests", () => {
 
       const response = await request.get(`/api/regions/${testRegionId}`);
 
-      expect(response.status).to.equal(HTTP_STATUS.OK);
+      expect(response.status).to.equal(StatusCodes.OK);
       expect(response.body._id).to.equal(testRegionId);
       expect(response.body.name).to.equal(sampleRegion.name);
     });
@@ -127,7 +121,7 @@ describe("Region Controller - Integration Tests", () => {
         .put(`/api/regions/${testRegionId}`)
         .send(updatedData);
 
-      expect(response.status).to.equal(HTTP_STATUS.OK);
+      expect(response.status).to.equal(StatusCodes.OK);
       expect(response.body._id).to.equal(testRegionId);
       expect(response.body.name).to.equal(updatedData.name);
     });
@@ -137,7 +131,7 @@ describe("Region Controller - Integration Tests", () => {
 
       const response = await request.delete(`/api/regions/${testRegionId}`);
 
-      expect(response.status).to.equal(HTTP_STATUS.OK);
+      expect(response.status).to.equal(StatusCodes.OK);
       expect(response.body.message).to.equal("Region successfully deleted");
     });
   });
