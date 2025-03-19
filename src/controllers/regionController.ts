@@ -172,17 +172,13 @@ export const getRegions = async (req: Request, res: Response) => {
 
 export const getRegionById = async (req: Request, res: Response) => {
   const { id } = req.params;
-  console.log(`Attempting to fetch region with ID: ${id}`);
+  const region = await RegionService.getRegionById(id);
 
-  try {
-    console.log(`Executing MongoDB query for ID: ${id}`);
-    const region = await RegionService.getRegionById(id);
-    console.log(`Region successfully found for ID: ${id}`);
-    return res.status(StatusCodes.OK).json(region);
-  } catch (error) {
-    console.error(`Error fetching region - ID: ${id}`, error);
-    return res.status(StatusCodes.NOT_FOUND).json({ message: error.message });
+  if (!region) {
+    return res.status(404).json({ message: "Region not found" });
   }
+
+  return res.status(200).json(region);
 };
 
 /**
@@ -229,16 +225,13 @@ export const updateRegion = async (req: Request, res: Response) => {
   const { id } = req.params;
   const { name, coordinates } = req.body;
 
-  try {
-    const region = await RegionService.updateRegion(id, name, coordinates);
-    return res.status(StatusCodes.OK).json(region);
-  } catch (error) {
-    console.error(`Error updating region - ID: ${id}`, error);
-    return res.status(error.message.includes("not found") ? 404 : 400).json({
-      message: error.message,
-      error: error instanceof Error ? error.message : String(error),
-    });
+  const region = await RegionService.updateRegion(id, name, coordinates);
+
+  if (!region) {
+    return res.status(404).json({ message: "Region not found" });
   }
+
+  return res.status(200).json(region);
 };
 
 /**
@@ -272,16 +265,13 @@ export const updateRegion = async (req: Request, res: Response) => {
 
 export const deleteRegion = async (req: Request, res: Response) => {
   const { id } = req.params;
+  const region = await RegionService.deleteRegion(id);
 
-  try {
-    await RegionService.deleteRegion(id);
-    return res
-      .status(StatusCodes.OK)
-      .json({ message: "Region successfully deleted" });
-  } catch (error) {
-    console.error(`Error deleting region - ID: ${id}`, error);
-    return res.status(StatusCodes.NOT_FOUND).json({ message: error.message });
+  if (!region) {
+    return res.status(404).json({ message: "Region not found" });
   }
+
+  return res.status(200).json({ message: "Region successfully deleted" });
 };
 
 /**
