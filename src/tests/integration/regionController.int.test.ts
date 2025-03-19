@@ -133,7 +133,7 @@ describe("Region Controller - Integration Tests", () => {
     });
 
     it("should delete a region", async () => {
-      sandbox.stub(RegionService, "deleteRegion").resolves();
+      sandbox.stub(RegionService, "deleteRegion").resolves(sampleRegion);
 
       const response = await request.delete(`/api/regions/${testRegionId}`);
 
