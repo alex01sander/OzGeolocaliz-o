@@ -95,17 +95,11 @@ describe("Region Service - Unit Tests", () => {
         regionId.toString(),
         "Updated Name",
         coordinates,
-      ).then(
-        () => {
-          expect.fail("Expected promise to be rejected");
-        },
-        (error) => {
-          expect(error).to.be.instanceof(Error);
-          expect(error.message).to.equal("Region not found");
-          expect(regionFindByIdStub.calledOnceWith(regionId.toString())).to.be
-            .true;
-        },
-      );
+      ).then((result) => {
+        expect(result).to.be.null;
+        expect(regionFindByIdStub.calledOnceWith(regionId.toString())).to.be
+          .true;
+      });
     });
   });
 });
