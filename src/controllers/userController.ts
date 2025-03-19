@@ -342,28 +342,43 @@ export const getUserById = async (req: Request, res: Response) => {
  *         description: Internal error while updating user
  */
 
+import mongoose from "mongoose";
+
 export const updateUser = async (req: Request, res: Response) => {
   try {
-    console.log("Update Request - ID:", req.params.id);
-    console.log("Update Request - Body:", req.body);
+    console.log("Update request for ID:", req.params.id);
 
-    const updatedUser = await userService.updateUser(req.params.id, req.body);
-
-    console.log("Updated User Result:", updatedUser);
-
-    if (!updatedUser)
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      console.log("Invalid MongoDB ID format");
       return res
         .status(StatusCodes.NOT_FOUND)
         .json({ message: "User not found" });
+    }
+
+    const existingUser = await UserModel.findById(req.params.id);
+    console.log("User exists:", existingUser ? "Yes" : "No");
+
+    if (!existingUser) {
+      return res
+        .status(StatusCodes.NOT_FOUND)
+        .json({ message: "User not found" });
+    }
+
+    const updatedUser = await userService.updateUser(req.params.id, req.body);
+    console.log("Updated user result:", updatedUser);
+
+    if (!updatedUser) {
+      return res
+        .status(StatusCodes.NOT_FOUND)
+        .json({ message: "User not found" });
+    }
 
     return res.status(StatusCodes.OK).json(updatedUser);
   } catch (error) {
-    console.error("Full Error in updateUser:", error);
-
+    console.error("Error updating user:", error);
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
       message: "Error updating user",
       error: error.message,
-      errorStack: error.stack,
     });
   }
 };
