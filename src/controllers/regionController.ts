@@ -116,7 +116,7 @@ export const createRegion = async (req: Request, res: Response) => {
     } else if (error.message.includes("Invalid coordinates")) {
       statusCode = StatusCodes.UNPROCESSABLE_ENTITY;
     } else {
-      statusCode = StatusCodes.BAD_REQUEST;
+      statusCode = StatusCodes.INTERNAL_SERVER_ERROR;
     }
 
     return res.status(statusCode).json({ message: error.message });
