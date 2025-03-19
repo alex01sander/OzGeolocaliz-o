@@ -33,7 +33,7 @@ const router = Router();
  * @swagger
  * /regions:
  *   post:
- *     tags: [Region]
+ *     tags: [Regions]
  *     summary: Create a new region
  *     description: Creates a new region with name and country.
  *     requestBody:
@@ -63,7 +63,7 @@ router.post("/regions", createRegion);
  * @swagger
  * /regions:
  *   get:
- *     tags: [Region]
+ *     tags: [Regions]
  *     summary: Get all regions
  *     description: Retrieves a list of all regions.
  *     responses:
@@ -89,7 +89,7 @@ router.get("/regions", getRegions);
  * @swagger
  * /regions/{id}:
  *   get:
- *     tags: [Region]
+ *     tags: [Regions]
  *     summary: Get a region by ID
  *     description: Retrieves a region by its ID.
  *     parameters:
@@ -119,8 +119,8 @@ router.get("/regions/:id", getRegionById);
 /**
  * @swagger
  * /regions/{id}:
- *   put:
- *     tags: [Region]
+ *   patch:
+ *     tags: [Regions]
  *     summary: Update a region
  *     description: Updates the details of a region by ID.
  *     parameters:
@@ -153,13 +153,13 @@ router.get("/regions/:id", getRegionById);
  *       500:
  *         description: Internal server error
  */
-router.put("/regions/:id", updateRegion);
+router.patch("/regions/:id", updateRegion);
 
 /**
  * @swagger
  * /regions/{id}:
  *   delete:
- *     tags: [Region]
+ *     tags: [Regions]
  *     summary: Delete a region
  *     description: Deletes a region by ID.
  *     parameters:
@@ -182,7 +182,7 @@ router.delete("/regions/:id", deleteRegion);
  * @swagger
  * /regions/point:
  *   get:
- *     tags: [Region]
+ *     tags: [Regions]
  *     summary: Find regions containing a specific point
  *     description: Finds regions that contain the specified point (longitude and latitude).
  *     parameters:
@@ -220,7 +220,7 @@ router.get("/regions/point", findRegionsContainingPoint);
  * @swagger
  * /regions/near:
  *   get:
- *     tags: [Region]
+ *     tags: [Regions]
  *     summary: Find regions near a point
  *     description: Finds regions within a specified distance from a point (longitude, latitude).
  *     parameters:

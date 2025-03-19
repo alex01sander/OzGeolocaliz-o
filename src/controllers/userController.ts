@@ -293,7 +293,7 @@ export const getUserById = async (req: Request, res: Response) => {
 /**
  * @swagger
  * /users/{id}:
- *   put:
+ *   patch:
  *     summary: Update user
  *     description: Updates the data of an existing user based on the provided ID
  *     tags: [Users]

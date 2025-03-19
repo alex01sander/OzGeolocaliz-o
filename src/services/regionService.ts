@@ -113,7 +113,7 @@ type Coordinate = [number, number];
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Region'
- *   put:
+ *   patch:
  *     summary: Update region
  *     tags: [Regions]
  *     parameters:
@@ -195,7 +195,7 @@ export class RegionService {
   ) {
     const region = await RegionModel.findById(id);
     if (!region) {
-      throw new Error("Region not found");
+      return null;
     }
 
     if (name) region.name = name;
@@ -239,7 +239,7 @@ export class RegionService {
   static async getRegionById(id: string) {
     const region = await RegionModel.findById(id).lean();
     if (!region) {
-      throw new Error("Region not found");
+      return null;
     }
     return region;
   }
@@ -247,7 +247,7 @@ export class RegionService {
   static async deleteRegion(id: string) {
     const region = await RegionModel.findByIdAndDelete(id);
     if (!region) {
-      throw new Error("Region not found");
+      return null;
     }
     return region;
   }

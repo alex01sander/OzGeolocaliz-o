@@ -44,7 +44,7 @@ import ObjectId = mongoose.Types.ObjectId;
  * @swagger
  * /user:
  *   post:
- *     tags: [User]
+ *     tags: [Users]
  *     summary: Register a new user
  *     description: Registers a new user with name, email, address, and/or coordinates.
  *     requestBody:

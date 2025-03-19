@@ -142,7 +142,7 @@ import { UserModel } from "../models/user";
  *       404:
  *         description: User not found
  *
- *   put:
+ *   patch:
  *     summary: Update user
  *     description: Updates an existing user's details
  *     tags: [Users]

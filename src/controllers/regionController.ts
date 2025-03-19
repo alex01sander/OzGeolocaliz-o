@@ -101,7 +101,7 @@ export const createRegion = async (req: Request, res: Response) => {
 
     if (!name || !coordinates || !userId) {
       return res
-        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .status(StatusCodes.UNPROCESSABLE_ENTITY)
         .json({ message: "Missing required fields" });
     }
 
@@ -188,7 +188,7 @@ export const getRegionById = async (req: Request, res: Response) => {
 /**
  * @swagger
  * /regions/{id}:
- *   put:
+ *   patch:
  *     summary: Update region
  *     description: Updates the data of an existing region
  *     tags: [Regions]
@@ -355,43 +355,43 @@ export const findRegionsContainingPoint = async (
  * @swagger
  * /regions/near-point:
  *   get:
- *     summary: Encontrar regiões próximas a um ponto
- *     description: Retorna todas as regiões dentro de uma distância máxima de um ponto geográfico
- *     tags: [Regiões]
+ *     summary: Find nearby regions to a point
+ *     description: Returns all regions within a maximum distance from a geographic point
+ *     tags: [Regions]
  *     parameters:
  *       - in: query
  *         name: longitude
  *         required: true
  *         schema:
  *           type: number
- *         description: Longitude do ponto geográfico
+ *         description: Longitude of the geographic point
  *       - in: query
  *         name: latitude
  *         required: true
  *         schema:
  *           type: number
- *         description: Latitude do ponto geográfico
+ *         description: Latitude of the geographic point
  *       - in: query
  *         name: maxDistance
  *         required: true
  *         schema:
  *           type: number
- *         description: Distância máxima em metros
+ *         description: Maximum distance in meters
  *       - in: query
  *         name: onlyUserRegions
  *         required: false
  *         schema:
  *           type: boolean
- *         description: Filtrar apenas regiões do usuário
+ *         description: Filter only user regions
  *       - in: query
  *         name: userId
  *         required: false
  *         schema:
  *           type: string
- *         description: ID do usuário (necessário se onlyUserRegions=true)
+ *         description: User ID (required if onlyUserRegions=true)
  *     responses:
  *       200:
- *         description: Lista de regiões próximas ao ponto
+ *         description: List of regions near the point
  *         content:
  *           application/json:
  *             schema:
@@ -399,10 +399,11 @@ export const findRegionsContainingPoint = async (
  *               items:
  *                 $ref: '#/components/schemas/Region'
  *       400:
- *         description: Parâmetros inválidos ou ausentes
+ *         description: Invalid or missing parameters
  *       500:
- *         description: Erro interno ao processar a solicitação
+ *         description: Internal error processing the request
  */
+
 export const findRegionsNearPoint = async (req: Request, res: Response) => {
   try {
     const { longitude, latitude, maxDistance, onlyUserRegions } = req.query;

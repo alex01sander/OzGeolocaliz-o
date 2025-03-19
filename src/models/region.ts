@@ -55,7 +55,7 @@ class Base extends TimeStamps {
  * @swagger
  * /regions:
  *   post:
- *     tags: [Region]
+ *     tags: [Regions]
  *     summary: Create a new region
  *     description: Creates a new region with name, user ID, and location (GeoJSON polygon).
  *     requestBody:

@@ -187,7 +187,7 @@ router.get("/users/:id", getUserById);
 /**
  * @swagger
  * /users/{id}:
- *   put:
+ *   patch:
  *     summary: Update existing user
  *     tags: [Users]
  *     parameters:
@@ -228,7 +228,7 @@ router.get("/users/:id", getUserById);
  *       500:
  *         description: Server error
  */
-router.put("/users/:id", updateUser);
+router.patch("/users/:id", updateUser);
 
 /**
  * @swagger
